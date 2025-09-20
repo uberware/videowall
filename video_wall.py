@@ -27,6 +27,7 @@ class VideoWall(QWidget):
             items = [None]
         self.item_count = len(items)
         sizes = spec.get("sizes", [])
+        print("Initializing VideoWall", self, items)
         # Build the cells
         self.splitter = QSplitter(self.orientation, self)
         self.splitter.setStyleSheet("QSplitter::handle { background-color: #060606; }")
@@ -139,10 +140,12 @@ class VideoWall(QWidget):
     def closeEvent(self, event):
         """Override the close event to ensure the children close cleanly."""
         super().closeEvent(event)
+        print("VideoWall closing", self)
         for i in reversed(range(self.splitter.count())):
             widget = self.splitter.widget(i)
             if widget:
                 widget.close()
+        self.deleteLater()
 
     def _each_item(self) -> typing.Generator[QWidget, None, None]:
         """Generator that yields each child item in the splitter."""

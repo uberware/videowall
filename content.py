@@ -12,6 +12,7 @@ MOVIE_FOLDER = Path("/Volumes/x/Good")
 
 def _search():
     """Populate the layout file map."""
+    print("populating file list")
     for ext in ["mp4", "mov", "avi"]:
         for file in MOVIE_FOLDER.rglob(f"*.{ext}"):
             if not file.name.startswith("."):

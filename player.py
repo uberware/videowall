@@ -48,9 +48,10 @@ class Player(QWidget):
         filename = spec.get("filename")
         volume = spec.get("volume", 0.0)
         speed = spec.get("speed", 1.0)
-        print(f"Initializing Player: [{speed}|{volume}] {filename}")
+        print(f"Initializing Player: [{speed}|{volume}] {filename}", self)
         self.split_horizontal = self.split_vertical = None
-        self.filename = Path(filename) if filename else None
+        self.filename = None
+        filename = Path(filename) if filename else None
 
         self.main_column = QVBoxLayout()
         self.main_column.setContentsMargins(0, 0, 0, 0)
@@ -144,7 +145,7 @@ class Player(QWidget):
         self._show_interface(False)
         self.unmute_volume = volume
         self.set_volume(self.unmute_volume)
-        self.set_source(self.filename)
+        self.set_source(filename)
 
         # Install event filter on video widget
         self.video.installEventFilter(self)
@@ -214,15 +215,16 @@ class Player(QWidget):
     def set_source(self, filename: typing.Optional[Path]):
         """Set the path to the movie to play."""
         print(f"Setting source: {filename}")
-        if self.filename != filename:
+        if filename and self.filename != filename:
             self.filename = filename
             self.player.setSource(QUrl.fromLocalFile(filename))
             self.player.setLoops(QMediaPlayer.Loops.Infinite)
             self.player.play()
-            # with QSignalBlocker(self.movie_list):
-            #     print("... before setCurrentText")
-            #     self.movie_list.setCurrentText(get_label(filename))
-            #     print("... after setCurrentText")
+            with QSignalBlocker(self.movie_list):
+                try:
+                    self.movie_list.setCurrentText(get_label(filename))
+                except:
+                    pass
 
     def _update_timeline_position(self, position):
         """Callback to update the timeline slider position during playback."""
@@ -288,8 +290,11 @@ class Player(QWidget):
 
     def closeEvent(self, event):
         """Override the close event to remove this Player from the transfer list."""
+        print("Player Closing", self)
         _transferring["all players"].remove(self)
         super().closeEvent(event)
+        self.player = None
+        self.deleteLater()
 
     def eventFilter(self, obj, event):
         """Event filter for the video widget to handle clicks to adjust Panel state."""

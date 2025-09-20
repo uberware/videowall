@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         # Default layout
         self.resize(1280, 720)
-        self.setCentralWidget(VideoWall({}))
+        self.reset()
         # Menu
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
             spec: Optionally provide a layout spec dictionary
         """
         print("reset", spec)
-        old = self.centralWidget()
+        old = self.root
         self.setCentralWidget(VideoWall(spec or {}))
         if old:
             old.close()
