@@ -9,6 +9,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QInputDialog
 
 from video_wall import VideoWall
+from player import act
 
 DEFAULT_SPEC = {
     "type": "VideoWall",
@@ -56,6 +57,19 @@ class MainWindow(QMainWindow):
         self.mute_action.setShortcut("Escape")
         self.mute_action.triggered.connect(self.mute)
         file_menu.addAction(self.mute_action)
+        file_menu.addSeparator()
+        prev_action = QAction("Up 1", self)
+        prev_action.setShortcut("Left")
+        prev_action.triggered.connect(lambda: act(-1))
+        file_menu.addAction(prev_action)
+        prev_action = QAction("Down 1", self)
+        prev_action.setShortcut("Right")
+        prev_action.triggered.connect(lambda: act(1))
+        file_menu.addAction(prev_action)
+        act_action = QAction("Act", self)
+        act_action.setShortcut("Return")
+        act_action.triggered.connect(lambda: act())
+        file_menu.addAction(act_action)
         file_menu.addSeparator()
         new_action = QAction("New", self)
         new_action.setShortcut("Ctrl+N")

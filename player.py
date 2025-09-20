@@ -3,6 +3,7 @@
 import math
 import random
 import typing
+from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
     QSplitter,
 )
 
+import content
 from content import get_files, get_label, get_path
 from movie_list import MovieListWidget
 
@@ -25,7 +27,35 @@ from movie_list import MovieListWidget
 _transferring: dict = {
     "player": None,
     "all players": [],
+    "control": None,
 }
+
+# default QSS data
+DEFAULT_QSS = (Path(__file__).parent / "style.qss").read_text()
+
+
+@dataclass(frozen=True)
+class PlayerSpec:
+    LOOP = 0
+    NEXT = 1
+    RANDOM = 2
+
+    filename: Path
+    volume: float
+    speed: float
+    mode: int
+    control: bool
+
+    @classmethod
+    def get(cls, spec: typing.Optional[dict]):
+        """Extract spec data from a dictionary"""
+        filename = spec.get("filename")
+        filename = Path(filename) if filename else None
+        volume = spec.get("volume", 0.0)
+        speed = spec.get("speed", 1.0)
+        mode = {"loop": cls.LOOP, "next": cls.NEXT, "random": cls.RANDOM}.get(spec.get("mode", "loop"), cls.LOOP)
+        control = bool(spec.get("control", False))
+        return cls(filename, volume, speed, mode, control)
 
 
 class Player(QWidget):
@@ -45,13 +75,11 @@ class Player(QWidget):
         if "type" not in spec or spec["type"] != "Player":
             raise TypeError(f"Wrong spec: {spec}")
 
-        filename = spec.get("filename")
-        volume = spec.get("volume", 0.0)
-        speed = spec.get("speed", 1.0)
-        print(f"Initializing Player: [{speed}|{volume}] {filename}", self)
+        spec = PlayerSpec.get(spec)
+        print(f"Initializing Player: [{spec.speed}|{spec.volume}|{spec.mode}] {spec.filename}", self)
         self.split_horizontal = self.split_vertical = None
         self.filename = None
-        filename = Path(filename) if filename else None
+        self.mode = 0
 
         self.main_column = QVBoxLayout()
         self.main_column.setContentsMargins(0, 0, 0, 0)
@@ -73,7 +101,7 @@ class Player(QWidget):
         self.top_row = QHBoxLayout()
         self.top_row.addSpacing(30)
         self.top_row.addWidget(self.movie_list)
-        self.top_row.addSpacing(30)
+        self.top_row.addSpacing(32)
 
         self.settings = QVBoxLayout()
         self.settings.setContentsMargins(0, 0, 0, 0)
@@ -82,11 +110,9 @@ class Player(QWidget):
         self.speed_slider.setRange(0, 200)
         self.speed_slider.valueChanged.connect(lambda val: self.set_speed(val / 100))
         self.speed_slider.mouseDoubleClickEvent = lambda event: self.speed_slider.setSliderPosition(100)
-        self.speed_slider.setSliderPosition(int(speed * 100))
         self.settings.addWidget(self.speed_slider)
         self.volume_slider = QSlider(Qt.Vertical, parent=self)
         self.volume_slider.setRange(0, 100)
-        self.volume_slider.setSliderPosition(int(volume * 100))
         self.volume_slider.valueChanged.connect(lambda val: self.set_volume(slider_to_volume(val)))
         self.volume_slider.mouseDoubleClickEvent = lambda event: self.volume_slider.setSliderPosition(0)
         self.settings.addWidget(self.volume_slider)
@@ -95,7 +121,7 @@ class Player(QWidget):
             """Make a tool button with the given label."""
             button = QToolButton(parent=self)
             button.setText(label)
-            button.setMinimumWidth(24)
+            button.setMinimumWidth(26)
             font = button.font()
             font.setPointSize(12)
             font.setBold(True)
@@ -104,33 +130,45 @@ class Player(QWidget):
 
         self.buttons = QVBoxLayout()
         self.buttons.setSpacing(10)
-        self.prev_movie_button = make_button("⇤")
-        self.buttons.addWidget(self.prev_movie_button)
-        self.random_movie_button = make_button("↺")
-        self.random_movie_button.clicked.connect(lambda: self.skip(None))
-        self.buttons.addWidget(self.random_movie_button)
+        self.loop_movie_button = make_button("↺")
+        self.loop_movie_button.clicked.connect(lambda: self.set_mode(PlayerSpec.LOOP))
+        self.buttons.addWidget(self.loop_movie_button)
         self.next_movie_button = make_button("⇥")
+        self.next_movie_button.clicked.connect(lambda: self.set_mode(PlayerSpec.NEXT))
         self.buttons.addWidget(self.next_movie_button)
+        self.random_movie_button = make_button("?")
+        self.random_movie_button.clicked.connect(lambda: self.set_mode(PlayerSpec.RANDOM))
+        self.buttons.addWidget(self.random_movie_button)
         self.buttons.addStretch(1)
-        self.close_button = make_button("⨉")
-        self.close_button.clicked.connect(lambda: self.close())
-        self.buttons.addWidget(self.close_button)
-        self.h_split_button = make_button("|")
-        self.h_split_button.clicked.connect(lambda: self.split_horizontal and self.split_horizontal())
-        self.buttons.addWidget(self.h_split_button)
-        self.v_split_button = make_button("—")
-        self.v_split_button.clicked.connect(lambda: self.split_vertical and self.split_vertical())
-        self.buttons.addWidget(self.v_split_button)
+        close_button = make_button("⨉")
+        close_button.clicked.connect(lambda: self.close())
+        self.buttons.addWidget(close_button)
+        h_split_button = make_button("|")
+        h_split_button.clicked.connect(lambda: self.split_horizontal and self.split_horizontal())
+        self.buttons.addWidget(h_split_button)
+        v_split_button = make_button("—")
+        v_split_button.clicked.connect(lambda: self.split_vertical and self.split_vertical())
+        self.buttons.addWidget(v_split_button)
         self.transfer_button = make_button("↯")
         self.transfer_button.clicked.connect(self._process_transfer)
         self.buttons.addWidget(self.transfer_button)
-        control_button = make_button("☞")
-        self.buttons.addWidget(control_button)
         self.buttons.addStretch(1)
+        end_play_button = make_button("⭐︎")
+        end_play_button.clicked.connect(self.end_action)
+        self.buttons.addWidget(end_play_button)
+        self.control_button = make_button("⚐")
+        self.control_button.clicked.connect(self._toggle_control)
+        self.buttons.addWidget(self.control_button)
         self.main_column.addLayout(self.video_row, stretch=1)
 
         self.current_time = QLabel("-:--:--", parent=self)
+        self.current_time.setAlignment(Qt.AlignCenter)
+        self.current_time.setMinimumWidth(35)
+        self.current_time.setMaximumWidth(35)
         self.total_time = QLabel("-:--:--", parent=self)
+        self.total_time.setAlignment(Qt.AlignCenter)
+        self.total_time.setMinimumWidth(35)
+        self.total_time.setMaximumWidth(35)
         self.timeline = QSlider(Qt.Horizontal, parent=self)
         self.timeline.valueChanged.connect(self.player.setPosition)
         self.player.positionChanged.connect(self._update_timeline_position)
@@ -139,13 +177,17 @@ class Player(QWidget):
         self.bottom_row.addWidget(self.current_time)
         self.bottom_row.addWidget(self.timeline)
         self.bottom_row.addWidget(self.total_time)
-        self.bottom_row.addSpacing(30)
+        self.bottom_row.addSpacing(32)
 
         self.setLayout(self.main_column)
         self._show_interface(False)
-        self.unmute_volume = volume
+        self.unmute_volume = spec.volume
+        self.set_mode(spec.mode)
+        self.set_speed(spec.speed)
         self.set_volume(self.unmute_volume)
-        self.set_source(filename)
+        self.set_source(spec.filename)
+        if spec.control:
+            self._toggle_control()
 
         # Install event filter on video widget
         self.video.installEventFilter(self)
@@ -158,6 +200,7 @@ class Player(QWidget):
             "filename": str(self.filename) or None,
             "speed": self.player.playbackRate(),
             "volume": self.audio.volume() or self.unmute_volume,
+            "mode": self.mode,
         }
 
     def skip(self, direction: typing.Optional[int]):
@@ -180,6 +223,11 @@ class Player(QWidget):
     def pause(self):
         """Pause playback."""
         self.player.pause()
+
+    def set_mode(self, mode):
+        """Set the mode."""
+        self.mode = mode
+        update_colors()
 
     def set_volume(self, volume: float, set_unmute: bool = True):
         """Set the volume.
@@ -218,19 +266,33 @@ class Player(QWidget):
         if filename and self.filename != filename:
             self.filename = filename
             self.player.setSource(QUrl.fromLocalFile(filename))
-            self.player.setLoops(QMediaPlayer.Loops.Infinite)
             self.player.play()
             with QSignalBlocker(self.movie_list):
                 try:
                     self.movie_list.setCurrentText(get_label(filename))
                 except:
-                    pass
+                    print(f"warning: source not in movie list folder: {content.MOVIE_FOLDER}")
+
+    def end_action(self):
+        """What happens when we hit the end of the movie."""
+        if self.mode == PlayerSpec.LOOP:
+            print("player looping", self)
+            self.player.setPosition(0)
+            self.player.play()
+        elif self.mode == PlayerSpec.NEXT:
+            print("player next movie", self)
+            self.skip(1)
+        else:
+            print("player random movie", self)
+            self.skip(None)
 
     def _update_timeline_position(self, position):
         """Callback to update the timeline slider position during playback."""
         with QSignalBlocker(self.timeline):
             self.timeline.setSliderPosition(position)
             update_time_widget(self.current_time, position)
+        if position == self.player.duration():
+            self.end_action()
 
     def _update_timeline_duration(self):
         """Update the UI when the timeline duration is set."""
@@ -288,6 +350,11 @@ class Player(QWidget):
             print("finished transfer")
         update_colors()
 
+    def _toggle_control(self):
+        """Handle the control button clicks."""
+        _transferring["control"] = None if _transferring["control"] == self else self
+        update_colors()
+
     def closeEvent(self, event):
         """Override the close event to remove this Player from the transfer list."""
         print("Player Closing", self)
@@ -336,6 +403,7 @@ def update_time_widget(widget, duration):
 def update_colors():
     """Update the transfer button colors."""
     transferring_player = _transferring["player"]
+    control_player = _transferring["control"]
     for player in _transferring["all players"]:
         if transferring_player is player:
             print("set transferring: ", player)
@@ -345,8 +413,16 @@ def update_colors():
             player.transfer_button.setStyleSheet("background-color: DodgerBlue")
         else:
             print("set none: ", player)
-            default_qss = Path(__file__).parent / "style.qss"
-            player.transfer_button.setStyleSheet(default_qss.read_text())
+            player.transfer_button.setStyleSheet(DEFAULT_QSS)
+
+        def status_color(check):
+            return "background-color: Chocolate" if check else DEFAULT_QSS
+
+        player.loop_movie_button.setStyleSheet(status_color(player.mode == PlayerSpec.LOOP))
+        player.next_movie_button.setStyleSheet(status_color(player.mode == PlayerSpec.NEXT))
+        player.random_movie_button.setStyleSheet(status_color(player.mode == PlayerSpec.RANDOM))
+
+        player.control_button.setStyleSheet(status_color(player == control_player))
 
 
 SLIDER_MIN = 0
@@ -382,3 +458,17 @@ def volume_to_slider(volume: float) -> int:
     log_max = math.log(VOLUME_MAX)
     t = (math.log(volume) - log_min) / (log_max - log_min)
     return int(round(1 + t * (SLIDER_MAX - 1)))
+
+
+def act(direction: typing.Optional[int] = None):
+    """Tell the Player with control to run the end_action.
+
+    Args:
+        direction: -1 to go back 1, 1 to go forward 1, None to do end-of-movie action
+    """
+    player = _transferring["control"]
+    if player:
+        if direction is None:
+            player.end_action()
+        else:
+            player.skip(direction)
