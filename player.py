@@ -9,6 +9,7 @@ from pathlib import Path
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, Qt, QEvent, QSignalBlocker
+from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (
     QLabel,
     QVBoxLayout,
@@ -162,13 +163,9 @@ class Player(QWidget):
         self.main_column.addLayout(self.video_row, stretch=1)
 
         self.current_time = QLabel("-:--:--", parent=self)
-        self.current_time.setAlignment(Qt.AlignCenter)
-        self.current_time.setMinimumWidth(35)
-        self.current_time.setMaximumWidth(35)
+        self.current_time.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         self.total_time = QLabel("-:--:--", parent=self)
-        self.total_time.setAlignment(Qt.AlignCenter)
-        self.total_time.setMinimumWidth(35)
-        self.total_time.setMaximumWidth(35)
+        self.total_time.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
         self.timeline = QSlider(Qt.Horizontal, parent=self)
         self.timeline.valueChanged.connect(self.player.setPosition)
         self.player.positionChanged.connect(self._update_timeline_position)
