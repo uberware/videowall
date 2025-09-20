@@ -1,0 +1,66 @@
+QSlider::groove:horizontal {
+    border: 1px solid #777;
+    height: 8px;
+    background: #ccc;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+QSlider::groove:vertical {
+    border: 1px solid #777;
+    width: 8px;
+    background: #ccc;
+    margin: 2px 0;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:horizontal {
+    background: #333;
+    border: 1px solid #007aff;
+    border-radius: 4px;
+}
+
+QSlider::sub-page:vertical {
+    background: #444;
+    border: 1px solid #666;
+    border-radius: 4px;
+}
+
+QSlider::add-page:horizontal {
+    background: #444;
+    border: 1px solid #666;
+    border-radius: 4px;
+}
+
+QSlider::add-page:vertical {
+    background: #333;
+    border: 1px solid #007aff;
+    border-radius: 4px;
+}
+
+QSlider::handle:horizontal {
+    background: #777;
+    border: 1px solid #007aff;
+    width: 7px;
+    height: 18px;
+    margin: -6px 0;
+    border-radius: 3px;
+}
+
+QSlider::handle:vertical {
+    background: #777;
+    border: 1px solid #007aff;
+    width: 18px;
+    height: 7px;
+    margin: 0 -6px;
+    border-radius: 3px;
+}
+
+QSlider::handle:hover {
+    background: #999;
+}
+
+QSlider::handle:pressed {
+    background: #2a2a2a;
+    border: 1px solid #111;
+}
