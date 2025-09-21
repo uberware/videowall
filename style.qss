@@ -64,3 +64,7 @@ QSlider::handle:pressed {
     background: #2a2a2a;
     border: 1px solid #111;
 }
+
+QSplitter::handle {
+    background-color: #0a0a0a;
+}

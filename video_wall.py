@@ -30,7 +30,6 @@ class VideoWall(QWidget):
         print("Initializing VideoWall", self, items)
         # Build the cells
         self.splitter = QSplitter(self.orientation, self)
-        self.splitter.setStyleSheet("QSplitter::handle { background-color: #080808; }")
         for item in items:
             self.append_item(item)
         # Resize the cells
