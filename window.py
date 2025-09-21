@@ -7,45 +7,25 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QDialog, QDialogButtonBox, QVBoxLayout, QInputDialog, QLabel
+from PySide6.QtWidgets import QMainWindow, QInputDialog
 
+from browser import browse_for_spec
+from options import DEFAULT_SPEC, OPTIONS
 from player import act
-from searchable_list import SearchableListBox
 from video_wall import VideoWall
-
-DEFAULT_SPEC = {
-    "type": "VideoWall",
-    "orientation": "horizontal",
-    "items": [
-        {
-            "type": "Player",
-            "filename": "/Volumes/Movies-4/Groundhog.Day.1993.REMASTERED.1080p.BluRay.6CH.ShAaNiG.mp4",
-            "speed": 1.0,
-            "volume": 0.0,
-        },
-        {
-            "type": "Player",
-            "filename": "/Volumes/Movies-4/Godzilla.vs.Kong.2021.1080p.x264.ac3-nibo.mp4",
-            "speed": 1.0,
-            "volume": 0.0,
-        },
-    ],
-    "sizes": [637, 636],
-}
 
 
 class MainWindow(QMainWindow):
     """The main window class."""
 
-    spec_folder = Path("/Volumes/x/Videowalls")
-    """Layout spec files are saved in this folder."""
-    spec_file = spec_folder / "spec.json"
+    spec_file = OPTIONS.spec_folder / "spec.json"
     """The default layout spec file with the last played layout."""
 
     def __init__(self):
         """Initialize the main window."""
         super().__init__()
-        self.setWindowFlags(Qt.WindowStaysOnTopHint)
+        if OPTIONS.always_on_top:
+            self.setWindowFlags(Qt.WindowStaysOnTopHint)
         # Default layout
         self.resize(1280, 720)
         self.reset()
@@ -124,35 +104,16 @@ class MainWindow(QMainWindow):
 
     def load(self):
         """Open the Load dialog box and load a selected layout."""
-        items = {it.stem: it for it in self.spec_folder.glob("*.json") if not it.name.startswith(".")}
-
-        class Browser(QDialog):
-            def __init__(self, parent):
-                super().__init__(parent)
-                self.setWindowTitle("Load")
-                layout = QVBoxLayout()
-                self.setLayout(layout)
-                layout.addWidget(QLabel("Select a layout to load"))
-                self.list_box = SearchableListBox(self)
-                self.list_box.addItems(list(items.keys()))
-                self.list_box.setMinimumWidth(200)
-                layout.addWidget(self.list_box)
-                buttons = QDialogButtonBox(
-                    QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-                )
-                buttons.accepted.connect(self.accept)
-                buttons.rejected.connect(self.reject)
-                layout.addWidget(buttons)
-
-        browser = Browser(self)
-        if browser.exec() == QDialog.Accepted:
-            self.reset(self.read_spec(items[browser.list_box.currentText()]))
+        spec_file = browse_for_spec(self)
+        if spec_file:
+            self.reset(self.read_spec(spec_file))
 
     def save(self):
         """Request a name from the user and save the current layout."""
         text, ok = QInputDialog.getText(self, "Save", "Name of this layout:")
         if ok and text:
-            out_file = self.spec_folder / f"{text}.json"
+            text = text.replace("/", "_").replace("\\", "_")
+            out_file = OPTIONS.spec_folder / f"{text}.json"
             self.write_spec(out_file)
 
     def reset(self, spec: typing.Optional[dict] = None):
@@ -180,10 +141,10 @@ class MainWindow(QMainWindow):
             file = self.spec_file
         if file.exists():
             data = json.loads(file.read_text())
-            # if "geometry" in data:
-            #     self.restoreGeometry(base64.b64decode(data["geometry"]))
-            # if "state" in data:
-            #     self.restoreState(base64.b64decode(data["state"]))
+            if OPTIONS.restore_window_state and "geometry" in data:
+                self.restoreGeometry(base64.b64decode(data["geometry"]))
+            if OPTIONS.restore_window_state and "state" in data:
+                self.restoreState(base64.b64decode(data["state"]))
             if "spec" in data:
                 return data["spec"]
         return {}

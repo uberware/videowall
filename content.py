@@ -3,18 +3,19 @@
 import typing
 from pathlib import Path
 
+from options import OPTIONS
+
 # Map a layout name to the Path object with the full file path
 _files = {}
-
-# TODO: make this configurable
-MOVIE_FOLDER = Path("/Volumes/x/Good")
 
 
 def _search():
     """Populate the layout file map."""
-    print("populating file list")
-    for ext in ["mp4", "mov", "avi"]:
-        for file in MOVIE_FOLDER.rglob(f"*.{ext}"):
+    movie_folder = OPTIONS.movie_folder
+    print("populating file list:", movie_folder)
+
+    for ext in ["mp4", "mov", "avi", "mkv", "wmv"]:
+        for file in movie_folder.rglob(f"*.{ext}"):
             if not file.name.startswith("."):
                 _files[get_label(file)] = file
 
@@ -34,4 +35,4 @@ def get_path(name: str) -> Path:
 
 def get_label(filepath: Path) -> str:
     """Get the relative label for a path based on the search folder."""
-    return f"{filepath.parent.relative_to(MOVIE_FOLDER)}/{filepath.stem}"
+    return f"{filepath.parent.relative_to(OPTIONS.movie_folder)}/{filepath.stem}"

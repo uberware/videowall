@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 import content
 from content import get_files, get_path
+from options import DEFAULT_QSS, OPTIONS
 from searchable_list import SearchableListBox
 
 # internal data for handling position swapping between two Players current positions in the layout
@@ -30,9 +31,6 @@ _transferring: dict = {
     "all players": [],
     "control": None,
 }
-
-# default QSS data
-DEFAULT_QSS = (Path(__file__).parent / "style.qss").read_text()
 
 
 @dataclass(frozen=True)
@@ -269,7 +267,7 @@ class Player(QWidget):
                 try:
                     self.movie_list.on_completer_activated(content.get_label(filename))
                 except ValueError:
-                    print(f"warning: source not in movie list folder: {content.MOVIE_FOLDER}")
+                    print(f"warning: source not in movie list folder: {OPTIONS.movie_folder}")
 
     def end_action(self):
         """What happens when we hit the end of the movie."""

@@ -1,16 +1,17 @@
 """The main entry point."""
 
 import sys
-from pathlib import Path
+
 from PySide6.QtWidgets import QApplication
+
+from options import DEFAULT_QSS
 from window import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Set the stylesheet
-    stylesheet = Path(__file__).parent / "style.qss"
-    app.setStyleSheet(stylesheet.read_text())
+    app.setStyleSheet(DEFAULT_QSS)
 
     # Set a smaller point size
     app_font = app.font()

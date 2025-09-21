@@ -17,17 +17,17 @@ class SearchableListBox(QComboBox):
         self.setInsertPolicy(QComboBox.NoInsert)
 
         # filter model for matching items
-        self.pFilterModel = QSortFilterProxyModel(self)
-        self.pFilterModel.setFilterCaseSensitivity(Qt.CaseInsensitive)
-        self.pFilterModel.setSourceModel(self.model())
+        self.filter_model = QSortFilterProxyModel(self)
+        self.filter_model.setFilterCaseSensitivity(Qt.CaseInsensitive)
+        self.filter_model.setSourceModel(self.model())
 
         # completer that uses filter model
-        self.completer = QCompleter(self.pFilterModel, self)
+        self.completer = QCompleter(self.filter_model, self)
         self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.setCompleter(self.completer)
 
         # connect signals
-        self.lineEdit().textEdited[str].connect(self.pFilterModel.setFilterFixedString)
+        self.lineEdit().textEdited[str].connect(self.filter_model.setFilterFixedString)
         self.completer.activated.connect(self.on_completer_activated)
 
     def on_completer_activated(self, text):
@@ -40,13 +40,13 @@ class SearchableListBox(QComboBox):
     def setModel(self, model):
         """Update the filter model and use that to update the main model."""
         super().setModel(model)
-        self.pFilterModel.setSourceModel(model)
-        self.completer.setModel(self.pFilterModel)
+        self.filter_model.setSourceModel(model)
+        self.completer.setModel(self.filter_model)
 
     def setModelColumn(self, column):
         """Set column for both the main and the filter models."""
         self.completer.setCompletionColumn(column)
-        self.pFilterModel.setFilterKeyColumn(column)
+        self.filter_model.setFilterKeyColumn(column)
         super().setModelColumn(column)
 
     def minimumSizeHint(self):
