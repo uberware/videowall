@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 import content
-from content import get_files, get_label, get_path
+from content import get_files, get_path
 from movie_list import MovieListWidget
 
 # internal data for handling position swapping between two Players current positions in the layout
@@ -268,7 +268,7 @@ class Player(QWidget):
             with QSignalBlocker(self.movie_list):
                 try:
                     self.movie_list.on_completer_activated(content.get_label(filename))
-                except:
+                except ValueError:
                     print(f"warning: source not in movie list folder: {content.MOVIE_FOLDER}")
 
     def end_action(self):
