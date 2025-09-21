@@ -7,10 +7,11 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QMainWindow, QInputDialog
+from PySide6.QtWidgets import QMainWindow, QDialog, QDialogButtonBox, QVBoxLayout, QInputDialog, QLabel
 
-from video_wall import VideoWall
 from player import act
+from searchable_list import SearchableListBox
+from video_wall import VideoWall
 
 DEFAULT_SPEC = {
     "type": "VideoWall",
@@ -124,9 +125,27 @@ class MainWindow(QMainWindow):
     def load(self):
         """Open the Load dialog box and load a selected layout."""
         items = {it.stem: it for it in self.spec_folder.glob("*.json") if not it.name.startswith(".")}
-        text, ok = QInputDialog.getItem(self, "Load", "Pick a layout to load", items)
-        if ok and text:
-            self.reset(self.read_spec(items[text]))
+
+        class Browser(QDialog):
+            def __init__(self, parent):
+                super().__init__(parent)
+                self.setWindowTitle("Load")
+                layout = QVBoxLayout()
+                self.setLayout(layout)
+                layout.addWidget(QLabel("Select a layout to load"))
+                self.list_box = SearchableListBox(self)
+                self.list_box.addItems(list(items.keys()))
+                layout.addWidget(self.list_box)
+                buttons = QDialogButtonBox(
+                    QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+                )
+                buttons.accepted.connect(self.accept)
+                buttons.rejected.connect(self.reject)
+                layout.addWidget(buttons)
+
+        browser = Browser(self)
+        if browser.exec() == QDialog.Accepted:
+            self.reset(self.read_spec(items[browser.list_box.currentText()]))
 
     def save(self):
         """Request a name from the user and save the current layout."""

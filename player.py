@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 
 import content
 from content import get_files, get_path
-from movie_list import MovieListWidget
+from searchable_list import SearchableListBox
 
 # internal data for handling position swapping between two Players current positions in the layout
 _transferring: dict = {
@@ -96,7 +96,7 @@ class Player(QWidget):
         self.player.durationChanged.connect(self._update_timeline_duration)
         self.video_row.addWidget(self.video, stretch=1)
 
-        self.movie_list = MovieListWidget(parent=self)
+        self.movie_list = SearchableListBox(parent=self)
         self.movie_list.addItems(get_files())
         self.movie_list.currentTextChanged.connect(lambda val: self.set_source(get_path(val)))
         self.top_row = QHBoxLayout()

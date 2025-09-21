@@ -4,7 +4,7 @@ from PySide6.QtCore import Qt, QSortFilterProxyModel, QSize
 from PySide6.QtWidgets import QComboBox, QCompleter
 
 
-class MovieListWidget(QComboBox):
+class SearchableListBox(QComboBox):
     """Custom ComboBox with searching class."""
 
     def __init__(self, parent=None):
