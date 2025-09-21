@@ -50,7 +50,7 @@ class PlayerSpec:
         """Extract spec data from a dictionary"""
         filename = spec.get("filename")
         filename = Path(filename) if filename else None
-        volume = spec.get("volume", 0.0)
+        volume = spec.get("volume", OPTIONS.default_volume)
         speed = spec.get("speed", 1.0)
         mode = {"loop": cls.LOOP, "next": cls.NEXT, "random": cls.RANDOM}.get(spec.get("mode", "loop"), cls.LOOP)
         control = bool(spec.get("control", False))

@@ -40,6 +40,7 @@ class _Options:
     spec_folder: Path
     always_on_top: bool
     restore_window_state: bool
+    default_volume: float
 
 
 def _load_options() -> _Options:
@@ -49,7 +50,8 @@ def _load_options() -> _Options:
     spec = Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/"))
     top = bool(data.get("always_on_top", True))
     restore = bool(data.get("restore_window_state", False))
-    return _Options(movie, spec, top, restore)
+    volume = float(data.get("default_volume", 1.0))
+    return _Options(movie, spec, top, restore, volume)
 
 
 OPTIONS = _load_options()
