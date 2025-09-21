@@ -195,7 +195,7 @@ class Player(QWidget):
             "filename": str(self.filename) or None,
             "speed": self.player.playbackRate(),
             "volume": self.audio.volume() or self.unmute_volume,
-            "mode": self.mode,
+            "mode": ["loop", "next", "random"][self.mode],
             "control": _transferring["control"] == self,
         }
 
