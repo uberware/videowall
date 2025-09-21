@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
                 layout.addWidget(QLabel("Select a layout to load"))
                 self.list_box = SearchableListBox(self)
                 self.list_box.addItems(list(items.keys()))
+                self.list_box.setMinimumWidth(200)
                 layout.addWidget(self.list_box)
                 buttons = QDialogButtonBox(
                     QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
