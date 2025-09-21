@@ -5,6 +5,7 @@ import json
 import typing
 from pathlib import Path
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMainWindow, QInputDialog
 
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         """Initialize the main window."""
         super().__init__()
+        self.setWindowFlags(Qt.WindowStaysOnTopHint)
         # Default layout
         self.resize(1280, 720)
         self.reset()
