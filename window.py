@@ -18,7 +18,7 @@ from video_wall import VideoWall
 class MainWindow(QMainWindow):
     """The main window class."""
 
-    spec_file = OPTIONS.spec_folder / "last_layout.json"
+    last_layout_file = OPTIONS.spec_folder / "last_layout.json"
     """The default layout spec file with the last played layout."""
 
     def __init__(self):
@@ -138,7 +138,7 @@ class MainWindow(QMainWindow):
             The loaded spec data dictionary or an empty dictionary
         """
         if not file:
-            file = self.spec_file
+            file = self.last_layout_file
         if file.exists():
             print("Reading layout:", file)
             data = json.loads(file.read_text())
@@ -167,5 +167,5 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Override the close event to save the current layout to the default spec file."""
-        self.write_spec(self.spec_file)
+        self.write_spec(self.last_layout_file)
         super().closeEvent(event)
