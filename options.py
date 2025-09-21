@@ -45,8 +45,8 @@ class _Options:
 def _load_options() -> _Options:
     """Loads the options and returns them as an Options object."""
     data = json.loads(OPTIONS_FILE.read_text() if OPTIONS_FILE.exists() else "{}")
-    movie = Path(data.get("movie_folder", "/Volumes/x/Good"))
-    spec = Path(data.get("spec_folder", "/Volumes/x/Videowalls"))
+    movie = Path(data.get("movie_folder", "/Volumes/Movies-4"))
+    spec = Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/"))
     top = bool(data.get("always_on_top", True))
     restore = bool(data.get("restore_window_state", False))
     return _Options(movie, spec, top, restore)

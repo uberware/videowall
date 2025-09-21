@@ -18,7 +18,7 @@ from video_wall import VideoWall
 class MainWindow(QMainWindow):
     """The main window class."""
 
-    spec_file = OPTIONS.spec_folder / "spec.json"
+    spec_file = OPTIONS.spec_folder / "last_layout.json"
     """The default layout spec file with the last played layout."""
 
     def __init__(self):
@@ -140,6 +140,7 @@ class MainWindow(QMainWindow):
         if not file:
             file = self.spec_file
         if file.exists():
+            print("Reading layout:", file)
             data = json.loads(file.read_text())
             if OPTIONS.restore_window_state and "geometry" in data:
                 self.restoreGeometry(base64.b64decode(data["geometry"]))
@@ -155,6 +156,7 @@ class MainWindow(QMainWindow):
         Args:
             file: A Path object with the destination file name
         """
+        print("Saving spec:", file)
         file.parent.mkdir(exist_ok=True)
         data = {
             "geometry": base64.b64encode(self.saveGeometry()).decode(),
