@@ -198,6 +198,7 @@ class Player(QWidget):
             "speed": self.player.playbackRate(),
             "volume": self.audio.volume() or self.unmute_volume,
             "mode": self.mode,
+            "control": _transferring["control"] == self,
         }
 
     def skip(self, direction: typing.Optional[int]):
@@ -266,7 +267,7 @@ class Player(QWidget):
             self.player.play()
             with QSignalBlocker(self.movie_list):
                 try:
-                    self.movie_list.setCurrentText(get_label(filename))
+                    self.movie_list.on_completer_activated(content.get_label(filename))
                 except:
                     print(f"warning: source not in movie list folder: {content.MOVIE_FOLDER}")
 
