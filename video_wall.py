@@ -51,8 +51,7 @@ class VideoWall(QWidget):
             "items": [],
             "sizes": self.splitter.sizes(),
         }
-        for i in range(self.splitter.count()):
-            widget = self.splitter.widget(i)
+        for widget in each_item_in(self):
             result["items"].append(widget.spec)
         return result
 
@@ -119,35 +118,39 @@ class VideoWall(QWidget):
 
     def play(self):
         """Notify all child Player and VideoWall widgets to start playback."""
-        for widget in self._each_item():
+        for widget in each_item_in(self):
             widget.play()
 
     def pause(self):
         """Notify all child Player and VideoWall widgets to pause playback."""
-        for widget in self._each_item():
+        for widget in each_item_in(self):
             widget.pause()
 
     def mute(self):
         """Notify all child Player and VideoWall widgets to mute."""
-        for widget in self._each_item():
+        for widget in each_item_in(self):
             widget.mute()
 
     def unmute(self):
         """Notify all child Player and VideoWall widgets to unmute."""
-        for widget in self._each_item():
+        for widget in each_item_in(self):
             widget.unmute()
 
     def closeEvent(self, event):
         """Override the close event to ensure the children close cleanly."""
         super().closeEvent(event)
         print("VideoWall closing", self)
-        for i in reversed(range(self.splitter.count())):
-            widget = self.splitter.widget(i)
-            if widget:
-                widget.close()
+        for widget in each_item_in(self, reverse=True):
+            widget.close()
         self.deleteLater()
 
-    def _each_item(self) -> typing.Generator[QWidget, None, None]:
-        """Generator that yields each child item in the splitter."""
-        for i in range(self.splitter.count()):
-            yield self.splitter.widget(i)
+
+def each_item_in(
+    video_wall: VideoWall, reverse: bool = False
+) -> typing.Generator[typing.Union[VideoWall, Player], None, None]:
+    """Generator that yields each child item in the splitter."""
+    index_list = range(video_wall.splitter.count())
+    if reverse:
+        index_list = reversed(index_list)
+    for i in index_list:
+        yield video_wall.splitter.widget(i)
