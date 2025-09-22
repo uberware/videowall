@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-myapp = "videowall.main:main"
+myapp = "videowall:main"
 
 [project.urls]
 Homepage = "https://github.com/yourusername/myapp"
