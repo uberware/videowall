@@ -7,7 +7,9 @@ from PySide6.QtWidgets import QApplication
 from options import DEFAULT_QSS
 from window import MainWindow
 
-if __name__ == "__main__":
+
+def main():
+    """Main function to run the GUI."""
     app = QApplication(sys.argv)
 
     # Set the stylesheet
@@ -27,5 +29,8 @@ if __name__ == "__main__":
 
     window = MainWindow()
     window.show()
+    return app.exec()
 
-    sys.exit(app.exec())
+
+if __name__ == "__main__":
+    sys.exit(main())
