@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <!-- Outer border -->
+  <rect x="8" y="8" width="240" height="160" rx="16" fill="#1A2E3F" />
+
+  <!-- Grid panels -->
+  <rect x="24" y="24" width="96" height="58" rx="8" fill="#383164"/>
+  <rect x="136" y="24" width="96" height="58" rx="8" fill="#383164"/>
+  <rect x="24" y="96" width="96" height="58" rx="8" fill="#383164"/>
+  <rect x="136" y="96" width="96" height="58" rx="8" fill="#d2691e"/>
+
+  <!-- Play triangle inside bottom-right panel -->
+  <polygon points="172,114 172,138 200,126" fill="white"/>
+</svg>
