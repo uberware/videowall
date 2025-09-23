@@ -301,10 +301,15 @@ class Player(QWidget):
                     update_time_widget(self.total_time, self.player.duration() - position)
             if position == self.player.duration():
                 self.end_action()
-            parent = self.parent()
-            while parent.parent():
-                parent = parent.parent()
-            parent.setCursor(Qt.BlankCursor)
+            if not self.movie_list.isVisible():
+                self._set_cursor(Qt.CursorShape.BlankCursor)
+
+    def _set_cursor(self, shape: Qt.CursorShape):
+        """Set the cursor."""
+        parent = self.parent()
+        while parent.parent():
+            parent = parent.parent()
+        parent.setCursor(shape)
 
     def _update_timeline_duration(self):
         """Update the UI when the timeline duration is set."""
@@ -323,6 +328,7 @@ class Player(QWidget):
             self.video_row.insertLayout(0, self.settings)
             self.video_row.addLayout(self.buttons)
             self.main_column.addLayout(self.bottom_row)
+            self._set_cursor(Qt.CursorShape.ArrowCursor)
         else:
             self.main_column.setContentsMargins(0, 0, 0, 0)
             self.main_column.setSpacing(0)
