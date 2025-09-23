@@ -26,10 +26,11 @@ from options import DEFAULT_QSS, OPTIONS
 from searchable_list import SearchableListBox
 
 # internal data for handling position swapping between two Players current positions in the layout
-_transferring: dict = {
-    "player": None,
+_runtime_data: dict = {
+    "source": None,
     "all players": [],
     "control": None,
+    "visible": set(),
 }
 
 
@@ -69,7 +70,7 @@ class Player(QWidget):
             spec: a Player spec dictionary or None for a blank player
         """
         super().__init__()
-        _transferring["all players"].append(self)
+        _runtime_data["all players"].append(self)
 
         if spec and not isinstance(spec, dict):
             raise TypeError(f"Not a spec: {spec}")
@@ -204,7 +205,7 @@ class Player(QWidget):
             "volume": self.audio.volume() or self.unmute_volume,
             "position": self.player.position(),
             "mode": ["loop", "next", "random"][self.mode],
-            "control": _transferring["control"] == self,
+            "control": _runtime_data["control"] == self,
         }
 
     def jog(self, forward: bool):
@@ -318,7 +319,7 @@ class Player(QWidget):
                     update_time_widget(self.total_time, self.player.duration() - position)
             if position == self.player.duration():
                 self.end_action()
-            if not self.movie_list.isVisible():
+            if not _runtime_data["visible"]:
                 self._set_cursor(Qt.CursorShape.BlankCursor)
 
     def _set_cursor(self, shape: Qt.CursorShape):
@@ -338,6 +339,7 @@ class Player(QWidget):
     def _show_interface(self, show: bool):
         """Hide or show widgets as needed."""
         if show:
+            _runtime_data["visible"].add(self)
             self.main_column.setContentsMargins(10, 10, 10, 10)
             self.main_column.setSpacing(10)
             self.movie_list.show()
@@ -347,6 +349,7 @@ class Player(QWidget):
             self.main_column.addLayout(self.bottom_row)
             self._set_cursor(Qt.CursorShape.ArrowCursor)
         else:
+            _runtime_data["visible"].discard(self)
             self.main_column.setContentsMargins(0, 0, 0, 0)
             self.main_column.setSpacing(0)
             self.movie_list.clearFocus()
@@ -363,38 +366,38 @@ class Player(QWidget):
 
     def _process_transfer(self):
         """Handle the transfer button clicks."""
-        if _transferring["player"] is None:
+        if _runtime_data["source"] is None:
             print(self, "Starting transfer")
-            _transferring["player"] = self
+            _runtime_data["source"] = self
             self.transfer_button.setStyleSheet("background-color: red")
         else:
-            if _transferring["player"] != self:
-                print(self, "Swapping with:", _transferring["player"])
+            if _runtime_data["source"] != self:
+                print(self, "Swapping with:", _runtime_data["source"])
                 my_splitter, my_index = find_splitter_and_index(self)
                 my_sizes = my_splitter.sizes()
-                other_splitter, other_index = find_splitter_and_index(_transferring["player"])
+                other_splitter, other_index = find_splitter_and_index(_runtime_data["source"])
                 other_sizes = other_splitter.sizes()
                 if not my_splitter or not other_splitter:
                     raise RuntimeError(f"Invalid player parents: {my_splitter} {other_splitter}")
                 self.setParent(None)
-                _transferring["player"].setParent(None)
-                my_splitter.insertWidget(my_index, _transferring["player"])
+                _runtime_data["source"].setParent(None)
+                my_splitter.insertWidget(my_index, _runtime_data["source"])
                 my_splitter.setSizes(my_sizes)
                 other_splitter.insertWidget(other_index, self)
                 other_splitter.setSizes(other_sizes)
-            _transferring["player"] = None
+            _runtime_data["source"] = None
             print(self, "Finished transfer")
         update_colors()
 
     def _toggle_control(self):
         """Handle the control button clicks."""
-        _transferring["control"] = None if _transferring["control"] == self else self
+        _runtime_data["control"] = None if _runtime_data["control"] == self else self
         update_colors()
 
     def closeEvent(self, event):
         """Override the close event to remove this Player from the transfer list."""
         print(self, "Closing")
-        _transferring["all players"].remove(self)
+        _runtime_data["all players"].remove(self)
         super().closeEvent(event)
         self.player = None
         self.deleteLater()
@@ -438,14 +441,13 @@ def update_time_widget(widget, duration):
 
 def update_colors():
     """Update the transfer button colors."""
-    transferring_player = _transferring["player"]
-    control_player = _transferring["control"]
-    button_qss = "\nQToolButton{{ background: {}; }}\n"
-    for player in _transferring["all players"]:
+    transferring_player = _runtime_data["source"]
+    control_player = _runtime_data["control"]
+    for player in _runtime_data["all players"]:
         if transferring_player is player:
-            button_qss = button_qss.format("DarkRed")
+            button_qss = "\nQToolButton{ background: DarkRed; }\n"
         elif transferring_player:
-            button_qss = button_qss.format("DodgerBlue")
+            button_qss = "\nQToolButton{ background: DodgerBlue; }\n"
         else:
             button_qss = ""
         player.transfer_button.setStyleSheet(DEFAULT_QSS + button_qss)
@@ -501,7 +503,7 @@ def act(direction: typing.Optional[int] = None):
     Args:
         direction: -1 to go back 1, 1 to go forward 1, None to do end-of-movie action
     """
-    player = _transferring["control"]
+    player = _runtime_data["control"]
     if player:
         if direction is None:
             player.end_action()
@@ -515,6 +517,6 @@ def jog(forward: bool):
     Args:
         forward: True to jog forward, Back go jog backward
     """
-    player = _transferring["control"]
+    player = _runtime_data["control"]
     if player:
         player.jog(forward)
