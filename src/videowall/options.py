@@ -38,30 +38,30 @@ DEMO_SPEC = {
 class _Options:
     """A class with the various settings for how things work."""
 
-    movie_folder: Path
-    spec_folder: Path
     always_on_top: bool
-    restore_window_state: bool
-    default_volume: float
-    remaining_time: bool
-    jog_interval: int
-    open_last_on_startup: bool
     auto_update_layout: bool
+    default_volume: float
+    jog_interval: int
+    movie_folder: Path
+    open_last_on_startup: bool
+    remaining_time: bool
+    restore_window_state: bool
+    spec_folder: Path
 
 
 def _load_options() -> _Options:
     """Loads the options and returns them as an Options object."""
     data = json.loads(OPTIONS_FILE.read_text() if OPTIONS_FILE.exists() else "{}")
     return _Options(
-        Path(data.get("movie_folder", "/Volumes/Movies-4")),
-        Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
         bool(data.get("always_on_top", True)),
-        bool(data.get("restore_window_state", False)),
-        float(data.get("default_volume", 1.0)),
-        bool(data.get("remaining_time", True)),
-        int(data.get("jog_interval", 10000)),
-        bool(data.get("open_last_on_startup", True)),
         bool(data.get("auto_update_layout", True)),
+        float(data.get("default_volume", 1.0)),
+        int(data.get("jog_interval", 10000)),
+        Path(data.get("movie_folder", "/Volumes/Movies-4")),
+        bool(data.get("open_last_on_startup", True)),
+        bool(data.get("remaining_time", True)),
+        bool(data.get("restore_window_state", False)),
+        Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
     )
 
 
