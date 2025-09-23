@@ -11,7 +11,7 @@ from PySide6.QtWidgets import QMainWindow, QInputDialog
 
 from browser import browse_for_spec
 from options import DEFAULT_SPEC, OPTIONS
-from player import act
+from player import act, jog
 from video_wall import VideoWall
 
 
@@ -29,31 +29,10 @@ class MainWindow(QMainWindow):
         # Default layout
         self.resize(1280, 720)
         self.reset()
-        # Menu
+
+        # File Menu
         menu_bar = self.menuBar()
         file_menu = menu_bar.addMenu("File")
-        self.play_action = QAction("Pause", self)
-        self.play_action.setShortcut("Space")
-        self.play_action.triggered.connect(self.play)
-        file_menu.addAction(self.play_action)
-        self.mute_action = QAction("Mute", self)
-        self.mute_action.setShortcut("Escape")
-        self.mute_action.triggered.connect(self.mute)
-        file_menu.addAction(self.mute_action)
-        file_menu.addSeparator()
-        prev_action = QAction("Up 1", self)
-        prev_action.setShortcut("Left")
-        prev_action.triggered.connect(lambda: act(-1))
-        file_menu.addAction(prev_action)
-        prev_action = QAction("Down 1", self)
-        prev_action.setShortcut("Right")
-        prev_action.triggered.connect(lambda: act(1))
-        file_menu.addAction(prev_action)
-        act_action = QAction("Act", self)
-        act_action.setShortcut("Return")
-        act_action.triggered.connect(lambda: act())
-        file_menu.addAction(act_action)
-        file_menu.addSeparator()
         new_action = QAction("New", self)
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self.reset)
@@ -75,6 +54,38 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save)
         file_menu.addAction(save_action)
+
+        # Playback Menu
+        play_menu = menu_bar.addMenu("Playback")
+        self.mute_action = QAction("Mute", self)
+        self.mute_action.setShortcut("Escape")
+        self.mute_action.triggered.connect(self.mute)
+        play_menu.addAction(self.mute_action)
+        self.play_action = QAction("Pause", self)
+        self.play_action.setShortcut("Space")
+        self.play_action.triggered.connect(self.play)
+        play_menu.addAction(self.play_action)
+        jog_back_action = QAction("Jog Back", self)
+        jog_back_action.setShortcut(",")
+        jog_back_action.triggered.connect(lambda: jog(forward=False))
+        play_menu.addAction(jog_back_action)
+        jog_forward_action = QAction("Jog Forward", self)
+        jog_forward_action.setShortcut(".")
+        jog_forward_action.triggered.connect(lambda: jog(forward=True))
+        play_menu.addAction(jog_forward_action)
+        play_menu.addSeparator()
+        prev_action = QAction("Up 1", self)
+        prev_action.setShortcut("Left")
+        prev_action.triggered.connect(lambda: act(-1))
+        play_menu.addAction(prev_action)
+        prev_action = QAction("Down 1", self)
+        prev_action.setShortcut("Right")
+        prev_action.triggered.connect(lambda: act(1))
+        play_menu.addAction(prev_action)
+        act_action = QAction("Act", self)
+        act_action.setShortcut("Return")
+        act_action.triggered.connect(lambda: act())
+        play_menu.addAction(act_action)
 
     @property
     def root(self) -> VideoWall:

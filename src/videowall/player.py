@@ -131,7 +131,7 @@ class Player(QWidget):
 
         self.buttons = QVBoxLayout()
         self.buttons.setSpacing(10)
-        self.loop_movie_button = make_button("↺")
+        self.loop_movie_button = make_button("↻")
         self.loop_movie_button.clicked.connect(lambda: self.set_mode(PlayerSpec.LOOP))
         self.buttons.addWidget(self.loop_movie_button)
         self.next_movie_button = make_button("⇥")
@@ -154,12 +154,6 @@ class Player(QWidget):
         self.transfer_button.clicked.connect(self._process_transfer)
         self.buttons.addWidget(self.transfer_button)
         self.buttons.addStretch(1)
-        end_play_button = make_button("⭐︎")
-        end_play_button.clicked.connect(self.end_action)
-        self.buttons.addWidget(end_play_button)
-        self.control_button = make_button("⚐")
-        self.control_button.clicked.connect(self._toggle_control)
-        self.buttons.addWidget(self.control_button)
         self.main_column.addLayout(self.video_row, stretch=1)
 
         self.current_time = QLabel("-:--:--", parent=self)
@@ -170,11 +164,21 @@ class Player(QWidget):
         self.timeline.valueChanged.connect(self.player.setPosition)
         self.player.positionChanged.connect(self._update_timeline_position)
         self.bottom_row = QHBoxLayout()
-        self.bottom_row.addSpacing(30)
+        self.control_button = make_button("⚐")
+        self.control_button.clicked.connect(self._toggle_control)
+        self.bottom_row.addWidget(self.control_button)
+        job_button = make_button("<<")
+        job_button.clicked.connect(lambda: self.jog(forward=False))
+        self.bottom_row.addWidget(job_button)
         self.bottom_row.addWidget(self.current_time)
         self.bottom_row.addWidget(self.timeline)
         self.bottom_row.addWidget(self.total_time)
-        self.bottom_row.addSpacing(32)
+        job_button = make_button(">>")
+        job_button.clicked.connect(lambda: self.jog(forward=True))
+        self.bottom_row.addWidget(job_button)
+        end_play_button = make_button("⭐︎")
+        end_play_button.clicked.connect(self.end_action)
+        self.bottom_row.addWidget(end_play_button)
 
         self.setLayout(self.main_column)
         self._show_interface(False)
@@ -202,6 +206,19 @@ class Player(QWidget):
             "mode": ["loop", "next", "random"][self.mode],
             "control": _transferring["control"] == self,
         }
+
+    def jog(self, forward: bool):
+        """Move a little forward or backward in the timeline.
+
+        Args:
+            forward: True to jog forward, False to jog backward.
+        """
+        if forward:
+            pos = min(self.player.duration(), self.player.position() + OPTIONS.jog_interval)
+        else:
+            pos = max(0, self.player.position() - OPTIONS.jog_interval)
+        print(self, "Jog to:", pos)
+        self.player.setPosition(pos)
 
     def skip(self, direction: typing.Optional[int]):
         """Change the playing movie.
@@ -423,13 +440,15 @@ def update_colors():
     """Update the transfer button colors."""
     transferring_player = _transferring["player"]
     control_player = _transferring["control"]
+    button_qss = "\nQToolButton{{ background: {}; }}\n"
     for player in _transferring["all players"]:
         if transferring_player is player:
-            player.transfer_button.setStyleSheet("background-color: DarkRed")
+            button_qss = button_qss.format("DarkRed")
         elif transferring_player:
-            player.transfer_button.setStyleSheet("background-color: DodgerBlue")
+            button_qss = button_qss.format("DodgerBlue")
         else:
-            player.transfer_button.setStyleSheet(DEFAULT_QSS)
+            button_qss = ""
+        player.transfer_button.setStyleSheet(DEFAULT_QSS + button_qss)
 
         def status_color(check):
             return "background-color: Chocolate" if check else DEFAULT_QSS
@@ -488,3 +507,14 @@ def act(direction: typing.Optional[int] = None):
             player.end_action()
         else:
             player.skip(direction)
+
+
+def jog(forward: bool):
+    """Tell the Player with control to jog.
+
+    Args:
+        forward: True to jog forward, Back go jog backward
+    """
+    player = _transferring["control"]
+    if player:
+        player.jog(forward)

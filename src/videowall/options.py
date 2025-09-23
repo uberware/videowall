@@ -42,6 +42,7 @@ class _Options:
     restore_window_state: bool
     default_volume: float
     remaining_time: bool
+    jog_interval: int
 
 
 def _load_options() -> _Options:
@@ -53,7 +54,8 @@ def _load_options() -> _Options:
     restore = bool(data.get("restore_window_state", False))
     volume = float(data.get("default_volume", 1.0))
     remaining = bool(data.get("remaining_time", True))
-    return _Options(movie, spec, top, restore, volume, remaining)
+    jog = int(data.get("jog_interval", 10000))
+    return _Options(movie, spec, top, restore, volume, remaining, jog)
 
 
 OPTIONS = _load_options()
