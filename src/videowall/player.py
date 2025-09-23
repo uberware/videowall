@@ -297,6 +297,8 @@ class Player(QWidget):
             with QSignalBlocker(self.timeline):
                 self.timeline.setSliderPosition(position)
                 update_time_widget(self.current_time, position)
+                if OPTIONS.remaining_time:
+                    update_time_widget(self.total_time, self.player.duration() - position)
             if position == self.player.duration():
                 self.end_action()
             parent = self.parent()

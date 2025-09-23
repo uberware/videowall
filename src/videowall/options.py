@@ -41,6 +41,7 @@ class _Options:
     always_on_top: bool
     restore_window_state: bool
     default_volume: float
+    remaining_time: bool
 
 
 def _load_options() -> _Options:
@@ -51,7 +52,8 @@ def _load_options() -> _Options:
     top = bool(data.get("always_on_top", True))
     restore = bool(data.get("restore_window_state", False))
     volume = float(data.get("default_volume", 1.0))
-    return _Options(movie, spec, top, restore, volume)
+    remaining = bool(data.get("remaining_time", True))
+    return _Options(movie, spec, top, restore, volume, remaining)
 
 
 OPTIONS = _load_options()
