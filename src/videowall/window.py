@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
         # Default layout
         self.resize(1280, 720)
-        self.reset()
+        self.reset(self.read_spec() if OPTIONS.open_last_on_startup else None)
 
         # File Menu
         menu_bar = self.menuBar()
@@ -150,7 +150,7 @@ class MainWindow(QMainWindow):
             The loaded spec data dictionary or an empty dictionary
         """
         if not file:
-            file = self.last_layout_file
+            file = self.default_layout_file
         if file.exists():
             print("Reading layout:", file)
             data = json.loads(file.read_text())
@@ -179,5 +179,5 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         """Override the close event to save the current layout to the default spec file."""
-        self.write_spec(self.last_layout_file)
+        self.write_spec(self.default_layout_file)
         super().closeEvent(event)

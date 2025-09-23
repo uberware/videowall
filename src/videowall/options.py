@@ -43,19 +43,22 @@ class _Options:
     default_volume: float
     remaining_time: bool
     jog_interval: int
+    open_last_on_startup: bool
 
 
 def _load_options() -> _Options:
     """Loads the options and returns them as an Options object."""
     data = json.loads(OPTIONS_FILE.read_text() if OPTIONS_FILE.exists() else "{}")
-    movie = Path(data.get("movie_folder", "/Volumes/Movies-4"))
-    spec = Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/"))
-    top = bool(data.get("always_on_top", True))
-    restore = bool(data.get("restore_window_state", False))
-    volume = float(data.get("default_volume", 1.0))
-    remaining = bool(data.get("remaining_time", True))
-    jog = int(data.get("jog_interval", 10000))
-    return _Options(movie, spec, top, restore, volume, remaining, jog)
+    return _Options(
+        Path(data.get("movie_folder", "/Volumes/Movies-4")),
+        Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
+        bool(data.get("always_on_top", True)),
+        bool(data.get("restore_window_state", False)),
+        float(data.get("default_volume", 1.0)),
+        bool(data.get("remaining_time", True)),
+        int(data.get("jog_interval", 10000)),
+        bool(data.get("open_last_on_startup", True)),
+    )
 
 
 OPTIONS = _load_options()
