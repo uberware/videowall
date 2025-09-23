@@ -10,7 +10,7 @@ OPTIONS_FILE = Path.home() / "videowall_settings.json"
 DEFAULT_QSS = (Path(__file__).parent / "style.qss").read_text()
 """Default QSS content string."""
 
-DEFAULT_SPEC = {
+DEMO_SPEC = {
     "type": "VideoWall",
     "orientation": "horizontal",
     "items": [
@@ -19,12 +19,14 @@ DEFAULT_SPEC = {
             "filename": "/Volumes/Movies-4/Groundhog.Day.1993.REMASTERED.1080p.BluRay.6CH.ShAaNiG.mp4",
             "speed": 1.0,
             "volume": 0.0,
+            "position": 300000,
         },
         {
             "type": "Player",
             "filename": "/Volumes/Movies-4/Godzilla.vs.Kong.2021.1080p.x264.ac3-nibo.mp4",
             "speed": 1.0,
             "volume": 0.0,
+            "position": 600000,
         },
     ],
     "sizes": [637, 636],

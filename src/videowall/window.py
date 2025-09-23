@@ -10,7 +10,7 @@ from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QMainWindow, QInputDialog
 
 from browser import browse_for_spec
-from options import DEFAULT_SPEC, OPTIONS
+from options import DEMO_SPEC, OPTIONS
 from player import act, jog
 from video_wall import VideoWall
 
@@ -37,9 +37,9 @@ class MainWindow(QMainWindow):
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self.reset)
         file_menu.addAction(new_action)
-        default_action = QAction("Default", self)
+        default_action = QAction("Demo", self)
         default_action.setShortcut("Ctrl+D")
-        default_action.triggered.connect(lambda: self.reset(DEFAULT_SPEC))
+        default_action.triggered.connect(lambda: self.reset(DEMO_SPEC))
         file_menu.addAction(default_action)
         last_action = QAction("Last", self)
         last_action.setShortcut("Ctrl+Z")
