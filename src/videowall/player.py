@@ -299,6 +299,10 @@ class Player(QWidget):
                 update_time_widget(self.current_time, position)
             if position == self.player.duration():
                 self.end_action()
+            parent = self.parent()
+            while parent.parent():
+                parent = parent.parent()
+            parent.setCursor(Qt.BlankCursor)
 
     def _update_timeline_duration(self):
         """Update the UI when the timeline duration is set."""

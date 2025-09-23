@@ -6,7 +6,7 @@ import typing
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QMainWindow, QInputDialog
 
 from browser import browse_for_spec
@@ -86,6 +86,7 @@ class MainWindow(QMainWindow):
             print("pause")
             self.play_action.setText("Play")
             self.root.pause()
+            self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
         else:
             print("play")
             self.play_action.setText("Pause")
