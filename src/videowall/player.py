@@ -294,7 +294,6 @@ class Player(QWidget):
             self.pending_position = None
             self.player.setPosition(position)
         else:
-            print(self, "Update timeline position:", position)
             with QSignalBlocker(self.timeline):
                 self.timeline.setSliderPosition(position)
                 update_time_widget(self.current_time, position)
