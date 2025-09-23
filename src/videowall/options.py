@@ -46,6 +46,7 @@ class _Options:
     remaining_time: bool
     jog_interval: int
     open_last_on_startup: bool
+    auto_update_layout: bool
 
 
 def _load_options() -> _Options:
@@ -60,6 +61,7 @@ def _load_options() -> _Options:
         bool(data.get("remaining_time", True)),
         int(data.get("jog_interval", 10000)),
         bool(data.get("open_last_on_startup", True)),
+        bool(data.get("auto_update_layout", True)),
     )
 
 

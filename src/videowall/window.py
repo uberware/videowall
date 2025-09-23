@@ -18,7 +18,7 @@ from video_wall import VideoWall
 class MainWindow(QMainWindow):
     """The main window class."""
 
-    last_layout_file = OPTIONS.spec_folder / "last_layout.json"
+    default_layout_file = OPTIONS.spec_folder / "last_layout.json"
     """The default layout spec file with the last played layout."""
 
     def __init__(self):
@@ -27,6 +27,7 @@ class MainWindow(QMainWindow):
         if OPTIONS.always_on_top:
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
         # Default layout
+        self.open_layout = None
         self.resize(1280, 720)
         self.reset(self.read_spec() if OPTIONS.open_last_on_startup else None)
 
@@ -149,8 +150,11 @@ class MainWindow(QMainWindow):
         Returns:
             The loaded spec data dictionary or an empty dictionary
         """
-        if not file:
+        if file:
+            self.open_layout = file
+        else:
             file = self.default_layout_file
+            self.open_layout = None
         if file.exists():
             print("Reading layout:", file)
             data = json.loads(file.read_text())
@@ -159,14 +163,17 @@ class MainWindow(QMainWindow):
             if OPTIONS.restore_window_state and "state" in data:
                 self.restoreState(base64.b64decode(data["state"]))
             if "spec" in data:
+                if not self.open_layout and "file" in data:
+                    self.open_layout = Path(data["file"])
                 return data["spec"]
         return {}
 
-    def write_spec(self, file: Path):
+    def write_spec(self, file: Path, include_open_layout: bool = False):
         """Write the current layout to a spec JSON file on disk.
 
         Args:
             file: A Path object with the destination file name
+            include_open_layout: True includes the open layout filename
         """
         print("Saving spec:", file)
         file.parent.mkdir(exist_ok=True)
@@ -175,9 +182,13 @@ class MainWindow(QMainWindow):
             "state": base64.b64encode(self.saveState()).decode(),
             "spec": self.root.spec,
         }
+        if include_open_layout and self.open_layout:
+            data["file"] = str(self.open_layout)
         file.write_text(json.dumps(data, indent=2))
 
     def closeEvent(self, event):
         """Override the close event to save the current layout to the default spec file."""
-        self.write_spec(self.default_layout_file)
+        self.write_spec(self.default_layout_file, include_open_layout=True)
+        if OPTIONS.auto_update_layout and self.open_layout:
+            self.write_spec(self.open_layout)
         super().closeEvent(event)
