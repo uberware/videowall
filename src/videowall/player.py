@@ -78,6 +78,8 @@ class Player(QWidget):
         """
         super().__init__()
         _runtime_data["all players"].append(self)
+        if not _runtime_data["control"]:
+            _runtime_data["control"] = self
 
         if spec and not isinstance(spec, dict):
             raise TypeError(f"Not a spec: {spec}")
@@ -405,6 +407,8 @@ class Player(QWidget):
         """Override the close event to remove this Player from the transfer list."""
         logger.debug(f"{self} Closing")
         _runtime_data["all players"].remove(self)
+        if _runtime_data["control"] == self:
+            _runtime_data["control"] = None
         super().closeEvent(event)
         self.player = None
         self.deleteLater()
