@@ -2,6 +2,7 @@
 
 import base64
 import json
+import logging
 import typing
 from pathlib import Path
 
@@ -13,6 +14,8 @@ from browser import browse_for_spec
 from options import DEMO_SPEC, OPTIONS
 from player import act, jog
 from video_wall import VideoWall
+
+logger = logging.getLogger("videowall")
 
 
 class MainWindow(QMainWindow):
@@ -96,23 +99,23 @@ class MainWindow(QMainWindow):
     def play(self):
         """Toggle playback."""
         if self.play_action.text() == "Pause":
-            print("pause")
+            logger.info("Pause all")
             self.play_action.setText("Play")
             self.root.pause()
             self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
         else:
-            print("play")
+            logger.info("Play all")
             self.play_action.setText("Pause")
             self.root.play()
 
     def mute(self):
         """Toggle all volume."""
         if self.mute_action.text() == "Mute":
-            print("mute")
+            logger.info("Mute all")
             self.mute_action.setText("Unmute")
             self.root.mute()
         else:
-            print("unmute")
+            logger.info("Unmute all")
             self.mute_action.setText("Mute")
             self.root.unmute()
 
@@ -138,7 +141,7 @@ class MainWindow(QMainWindow):
         Args:
             spec: Optionally provide a layout spec dictionary
         """
-        print("reset", spec)
+        logger.info(f"Loading layout spec: {spec}")
         old = self.root
         self.setCentralWidget(VideoWall(spec or {}))
         if old:
@@ -159,7 +162,7 @@ class MainWindow(QMainWindow):
             file = self.default_layout_file
             self.open_layout = None
         if file.exists():
-            print("Reading layout:", file)
+            logger.info(f"Reading layout: {file}")
             data = json.loads(file.read_text())
             if OPTIONS.restore_window_state and "geometry" in data:
                 self.restoreGeometry(base64.b64decode(data["geometry"]))
@@ -178,7 +181,7 @@ class MainWindow(QMainWindow):
             file: A Path object with the destination file name
             include_open_layout: True includes the open layout filename
         """
-        print("Saving spec:", file)
+        logger.info(f"Saving spec: {file}")
         file.parent.mkdir(exist_ok=True)
         data = {
             "geometry": base64.b64encode(self.saveGeometry()).decode(),

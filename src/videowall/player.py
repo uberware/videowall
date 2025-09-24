@@ -1,5 +1,6 @@
 """The Player panel and controls."""
 
+import logging
 import math
 import random
 import typing
@@ -24,6 +25,8 @@ import content
 from content import get_files, get_path
 from options import DEFAULT_QSS, OPTIONS
 from searchable_list import SearchableListBox
+
+logger = logging.getLogger("videowall")
 
 # internal data for handling position swapping between two Players current positions in the layout
 _runtime_data: dict = {
@@ -82,7 +85,7 @@ class Player(QWidget):
             raise TypeError(f"Wrong spec: {spec}")
 
         spec = PlayerSpec.get(spec)
-        print(self, f"Initializing Player: [{spec.speed}|{spec.volume}|{spec.mode}] {spec.filename}")
+        logger.debug(f"{self} Initializing Player: [{spec.speed}|{spec.volume}|{spec.mode}] {spec.filename}")
         self.split_horizontal = self.split_vertical = None
         self.filename = None
         self.mode = 0
@@ -222,7 +225,7 @@ class Player(QWidget):
             pos = min(self.player.duration(), self.player.position() + OPTIONS.jog_interval)
         else:
             pos = max(0, self.player.position() - OPTIONS.jog_interval)
-        print(self, "Jog to:", pos)
+        logger.debug(f"{self} Jog to: {pos}")
         self.player.setPosition(pos)
 
     def skip(self, direction: typing.Optional[int]):
@@ -235,7 +238,7 @@ class Player(QWidget):
         count = self.movie_list.count()
         if direction is None:
             direction = random.randint(1, count - 1)
-        print(self, "Skip:", direction)
+        logger.debug(f"{self} Skip: {direction}")
         self.movie_list.setCurrentIndex((index + direction + count) % count)
 
     def play(self):
@@ -284,7 +287,7 @@ class Player(QWidget):
 
     def set_source(self, filename: typing.Optional[Path]):
         """Set the path to the movie to play."""
-        print(self, "Setting source:", filename)
+        logger.info(f"{self} Setting source: {filename}")
         if filename and self.filename != filename:
             self.filename = filename
             self.player.setSource(QUrl.fromLocalFile(filename))
@@ -293,25 +296,25 @@ class Player(QWidget):
                 try:
                     self.movie_list.on_completer_activated(content.get_label(filename))
                 except ValueError:
-                    print(self, f"warning: source not in movie list folder: {OPTIONS.movie_folder}")
+                    logger.warning(f"source not in movie list folder: {OPTIONS.movie_folder}")
 
     def end_action(self):
         """What happens when we hit the end of the movie."""
         if self.mode == PlayerSpec.LOOP:
-            print(self, "Looping")
+            logger.info(f"{self} Looping")
             self.player.setPosition(0)
             self.player.play()
         elif self.mode == PlayerSpec.NEXT:
-            print(self, "Next movie")
+            logger.info(f"{self} Next movie")
             self.skip(1)
         else:
-            print(self, "Random movie")
+            logger.info(f"{self} Random movie")
             self.skip(None)
 
     def _update_timeline_position(self, position):
         """Callback to update the timeline slider position during playback."""
         if self.pending_position:
-            print(self, "Pending timeline position:", self.pending_position)
+            logger.debug(f"{self} Pending timeline position: {self.pending_position}")
             position = self.pending_position
             self.pending_position = None
             self.player.setPosition(position)
@@ -371,12 +374,12 @@ class Player(QWidget):
     def _process_transfer(self):
         """Handle the transfer button clicks."""
         if _runtime_data["source"] is None:
-            print(self, "Starting transfer")
+            logger.debug(f"{self} Starting transfer")
             _runtime_data["source"] = self
             self.transfer_button.setStyleSheet("background-color: red")
         else:
             if _runtime_data["source"] != self:
-                print(self, "Swapping with:", _runtime_data["source"])
+                logger.debug(f"{self} Swapping with: {_runtime_data['source']}")
                 my_splitter, my_index = find_splitter_and_index(self)
                 my_sizes = my_splitter.sizes()
                 other_splitter, other_index = find_splitter_and_index(_runtime_data["source"])
@@ -390,7 +393,7 @@ class Player(QWidget):
                 other_splitter.insertWidget(other_index, self)
                 other_splitter.setSizes(other_sizes)
             _runtime_data["source"] = None
-            print(self, "Finished transfer")
+            logger.debug(f"{self} Finished transfer")
         update_colors()
 
     def _toggle_control(self):
@@ -400,7 +403,7 @@ class Player(QWidget):
 
     def closeEvent(self, event):
         """Override the close event to remove this Player from the transfer list."""
-        print(self, "Closing")
+        logger.debug(f"{self} Closing")
         _runtime_data["all players"].remove(self)
         super().closeEvent(event)
         self.player = None

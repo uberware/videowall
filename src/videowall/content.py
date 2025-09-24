@@ -1,9 +1,13 @@
 """Access to the content."""
 
+import logging
 import typing
 from pathlib import Path
 
 from options import OPTIONS
+
+logger = logging.getLogger("videowall")
+
 
 # Map a layout name to the Path object with the full file path
 _files = {}
@@ -12,7 +16,7 @@ _files = {}
 def _search():
     """Populate the layout file map."""
     movie_folder = OPTIONS.movie_folder
-    print("populating file list:", movie_folder)
+    logger.info(f"Populating file list: {movie_folder}")
 
     for ext in ["mp4", "mov", "avi", "mkv", "wmv"]:
         for file in movie_folder.rglob(f"*.{ext}"):

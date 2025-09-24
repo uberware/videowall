@@ -1,5 +1,6 @@
 """The main entry point."""
 
+import logging
 import sys
 
 from PySide6.QtWidgets import QApplication
@@ -29,8 +30,11 @@ def main():
 
     window = MainWindow()
     window.show()
+    logger.info("Running main loop")
     return app.exec()
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger("videowall")
+    logging.basicConfig(level=logging.INFO)
     sys.exit(main())

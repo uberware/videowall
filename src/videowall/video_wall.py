@@ -1,10 +1,13 @@
 """The VideoWall is a collection of Players in a single row or column."""
 
+import logging
 import typing
 
 from PySide6.QtWidgets import QWidget, QSplitter, QVBoxLayout
 from PySide6.QtCore import Qt
 from player import Player
+
+logger = logging.getLogger("videowall")
 
 
 class VideoWall(QWidget):
@@ -27,7 +30,7 @@ class VideoWall(QWidget):
             items = [None]
         self.item_count = len(items)
         sizes = spec.get("sizes", [])
-        print("Initializing VideoWall", self, items)
+        logger.debug(f"Initializing VideoWall {self} {items}")
         # Build the cells
         self.splitter = QSplitter(self.orientation, self)
         for item in items:
@@ -60,7 +63,7 @@ class VideoWall(QWidget):
         Args:
             item: an existing Player object, a Player or Video wall spec dictionary, or None for an empty Player
         """
-        print(f"Append item: {item}")
+        logger.debug(f"Append item: {item}")
         if not item:
             item = {"type": "Player"}
         if not isinstance(item, (dict, Player)):
@@ -86,7 +89,7 @@ class VideoWall(QWidget):
         extra_cells = self.item_count - 1
         sizes = [cell_size] * extra_cells
         sizes.append(length - extra_cells * cell_size)
-        print(f"Arranged: {sizes}")
+        logger.debug(f"Arranged: {sizes}")
         return sizes
 
     def handle_split(self, player, new_orientation):
@@ -94,16 +97,16 @@ class VideoWall(QWidget):
         # Find which index this player occupies in the splitter
         index = self.splitter.indexOf(player)
         if index == -1:
-            print(f"split: {player} not found")
+            logger.debug(f"split: {player} not found")
             return  # not found
         if new_orientation == self.orientation:
             # Add a new widget after this one
-            print("split: same direction")
+            logger.debug("split: same direction")
             self.item_count += 1
             self.append_item(None)
             self.splitter.setSizes(self.arrange_cells())
         else:
-            print("split: new direction")
+            logger.debug("split: new direction")
             # Build a new nested splitter with two items:
             # the original player and a new blank Player
             new_spec = {
@@ -138,7 +141,7 @@ class VideoWall(QWidget):
     def closeEvent(self, event):
         """Override the close event to ensure the children close cleanly."""
         super().closeEvent(event)
-        print("VideoWall closing", self)
+        logger.debug(f"VideoWall {self} Closing")
         for widget in each_item_in(self, reverse=True):
             widget.close()
         self.deleteLater()
