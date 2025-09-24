@@ -10,9 +10,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QMainWindow, QInputDialog
 
+import player
 from browser import browse_for_spec
 from options import DEMO_SPEC, OPTIONS
-from player import act, jog, volume
 from video_wall import VideoWall
 
 logger = logging.getLogger("videowall")
@@ -67,11 +67,11 @@ class MainWindow(QMainWindow):
         play_menu.addAction(self.mute_action)
         louder_action = QAction("Louder", self)
         louder_action.setShortcut("Up")
-        louder_action.triggered.connect(lambda: volume(True))
+        louder_action.triggered.connect(lambda: player.volume(True))
         play_menu.addAction(louder_action)
         quieter_action = QAction("Quieter", self)
         quieter_action.setShortcut("Down")
-        quieter_action.triggered.connect(lambda: volume(False))
+        quieter_action.triggered.connect(lambda: player.volume(False))
         play_menu.addAction(quieter_action)
         play_menu.addSeparator()
         self.play_action = QAction("Pause", self)
@@ -80,25 +80,30 @@ class MainWindow(QMainWindow):
         play_menu.addAction(self.play_action)
         jog_back_action = QAction("Jog Back", self)
         jog_back_action.setShortcut(",")
-        jog_back_action.triggered.connect(lambda: jog(forward=False))
+        jog_back_action.triggered.connect(lambda: player.jog(forward=False))
         play_menu.addAction(jog_back_action)
         jog_forward_action = QAction("Jog Forward", self)
         jog_forward_action.setShortcut(".")
-        jog_forward_action.triggered.connect(lambda: jog(forward=True))
+        jog_forward_action.triggered.connect(lambda: player.jog(forward=True))
         play_menu.addAction(jog_forward_action)
         play_menu.addSeparator()
         prev_action = QAction("Up 1", self)
         prev_action.setShortcut("Left")
-        prev_action.triggered.connect(lambda: act(-1))
+        prev_action.triggered.connect(lambda: player.act(-1))
         play_menu.addAction(prev_action)
         prev_action = QAction("Down 1", self)
         prev_action.setShortcut("Right")
-        prev_action.triggered.connect(lambda: act(1))
+        prev_action.triggered.connect(lambda: player.act(1))
         play_menu.addAction(prev_action)
         act_action = QAction("Act", self)
         act_action.setShortcut("Return")
-        act_action.triggered.connect(lambda: act())
+        act_action.triggered.connect(lambda: player.act())
         play_menu.addAction(act_action)
+        play_menu.addSeparator()
+        toggle_action = QAction("Toggle", self)
+        toggle_action.setShortcut("`")
+        toggle_action.triggered.connect(lambda: player.toggle())
+        play_menu.addAction(toggle_action)
 
     @property
     def root(self) -> VideoWall:

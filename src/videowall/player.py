@@ -191,7 +191,7 @@ class Player(QWidget):
         self.bottom_row.addWidget(end_play_button)
 
         self.setLayout(self.main_column)
-        self._show_interface(False)
+        self.show_interface(False)
         self.unmute_volume = spec.volume
         self.set_mode(spec.mode)
         self.set_speed(spec.speed)
@@ -358,8 +358,14 @@ class Player(QWidget):
             self.timeline.setRange(0, duration)
             update_time_widget(self.total_time, duration)
 
-    def _show_interface(self, show: bool):
-        """Hide or show widgets as needed."""
+    def show_interface(self, show: typing.Optional[bool] = None):
+        """Hide or show widgets as needed.
+
+        Args:
+            show: True shows, False hides, None toggles
+        """
+        if show is None:
+            show = not self.movie_list.isVisible()
         if show:
             _runtime_data["visible"].add(self)
             self.main_column.setContentsMargins(10, 10, 10, 10)
@@ -431,10 +437,7 @@ class Player(QWidget):
         if obj == self.video and event.type() == QEvent.MouseButtonPress:
             if event.button() == Qt.LeftButton:
                 # Toggle palette visibility
-                if self.movie_list.isVisible():
-                    self._show_interface(False)
-                else:
-                    self._show_interface(True)
+                self.show_interface()
             return True  # consume the click
         return super().eventFilter(obj, event)
 
@@ -555,3 +558,11 @@ def volume(louder: bool):
     player = _runtime_data["control"]
     if player:
         player.nudge_volume_slider(louder)
+
+
+def toggle():
+    """Toggle the interface for the Player with control."""
+    player = _runtime_data["control"]
+    if player:
+        logger.info("Toggle active player")
+        player.show_interface()
