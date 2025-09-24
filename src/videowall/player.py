@@ -36,10 +36,14 @@ _runtime_data: dict = {
 
 @dataclass(frozen=True)
 class PlayerSpec:
+    """Player settings class."""
+
+    # constants for the loop mode options
     LOOP = 0
     NEXT = 1
     RANDOM = 2
 
+    # Player data
     filename: Path
     volume: float
     speed: float

@@ -90,6 +90,7 @@ class MainWindow(QMainWindow):
 
     @property
     def root(self) -> VideoWall:
+        """Return the current root VideoWall item."""
         return typing.cast(VideoWall, self.centralWidget())
 
     def play(self):

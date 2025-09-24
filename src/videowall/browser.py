@@ -10,7 +10,10 @@ from searchable_list import SearchableListBox
 
 
 class Browser(QDialog):
+    """A browser dialog box."""
+
     def __init__(self, parent: QWidget, items):
+        """Initialize a new Browser object."""
         super().__init__(parent)
         self.setWindowTitle("Load")
         layout = QVBoxLayout()
