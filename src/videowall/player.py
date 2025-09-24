@@ -277,6 +277,19 @@ class Player(QWidget):
         """Unmute the volume back to the last remembered volume."""
         self.set_volume(self.unmute_volume, set_unmute=False)
 
+    def nudge_volume_slider(self, louder: bool):
+        """Bump the volume slider.
+
+        Args:
+            louder: True to bump the volume slider up instead of down
+        """
+        if louder:
+            pos = min(self.volume_slider.maximum(), self.volume_slider.sliderPosition() + 5)
+        else:
+            pos = max(0, self.volume_slider.sliderPosition() - 5)
+        logger.info(f"{self} Nudge volume slider to: {pos}")
+        self.volume_slider.setSliderPosition(pos)
+
     def set_speed(self, speed: float):
         """Set the playback speed.
 
@@ -531,3 +544,14 @@ def jog(forward: bool):
     player = _runtime_data["control"]
     if player:
         player.jog(forward)
+
+
+def volume(louder: bool):
+    """Tell the Player with control to change volume.
+
+    Args:
+        louder: True to increase the volume instead of decrease
+    """
+    player = _runtime_data["control"]
+    if player:
+        player.nudge_volume_slider(louder)

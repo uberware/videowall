@@ -12,7 +12,7 @@ from PySide6.QtWidgets import QMainWindow, QInputDialog
 
 from browser import browse_for_spec
 from options import DEMO_SPEC, OPTIONS
-from player import act, jog
+from player import act, jog, volume
 from video_wall import VideoWall
 
 logger = logging.getLogger("videowall")
@@ -65,6 +65,15 @@ class MainWindow(QMainWindow):
         self.mute_action.setShortcut("Escape")
         self.mute_action.triggered.connect(self.mute)
         play_menu.addAction(self.mute_action)
+        louder_action = QAction("Louder", self)
+        louder_action.setShortcut("Up")
+        louder_action.triggered.connect(lambda: volume(True))
+        play_menu.addAction(louder_action)
+        quieter_action = QAction("Quieter", self)
+        quieter_action.setShortcut("Down")
+        quieter_action.triggered.connect(lambda: volume(False))
+        play_menu.addAction(quieter_action)
+        play_menu.addSeparator()
         self.play_action = QAction("Pause", self)
         self.play_action.setShortcut("Space")
         self.play_action.triggered.connect(self.play)
