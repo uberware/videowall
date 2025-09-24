@@ -142,6 +142,7 @@ class MainWindow(QMainWindow):
         if ok and text:
             text = text.replace("/", "_").replace("\\", "_")
             out_file = OPTIONS.spec_folder / f"{text}.json"
+            self.open_layout = out_file
             self.write_spec(out_file)
 
     def reset(self, spec: typing.Optional[dict] = None):
