@@ -119,6 +119,8 @@ class MainWindow(QMainWindow):
         """Open the Load dialog box and load a selected layout."""
         spec_file = browse_for_spec(self)
         if spec_file:
+            if OPTIONS.auto_update_layout and self.open_layout:
+                self.write_spec(self.open_layout)
             self.reset(self.read_spec(spec_file))
 
     def save(self):
