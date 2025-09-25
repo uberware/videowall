@@ -81,8 +81,6 @@ class Player(QWidget):
         """
         super().__init__()
         _runtime_data["all players"].append(self)
-        if not _runtime_data["control"]:
-            _runtime_data["control"] = self
 
         if spec and not isinstance(spec, dict):
             raise TypeError(f"Not a spec: {spec}")
@@ -203,7 +201,7 @@ class Player(QWidget):
         self.history = spec.history
         self.at_history = spec.at_history
         self.set_source(spec.filename)
-        if spec.control:
+        if spec.control or not _runtime_data["control"]:
             self._toggle_control()
 
         # Install event filter on video widget
