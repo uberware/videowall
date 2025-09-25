@@ -7,24 +7,23 @@ import typing
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PySide6.QtMultimediaWidgets import QVideoWidget
-from PySide6.QtCore import QUrl, Qt, QEvent, QSignalBlocker
+from PySide6.QtCore import QEvent, QSignalBlocker, Qt, QUrl
 from PySide6.QtGui import QFontDatabase
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
-    QLabel,
-    QVBoxLayout,
-    QSlider,
-    QWidget,
     QHBoxLayout,
-    QToolButton,
+    QLabel,
+    QSlider,
     QSplitter,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
 )
 
-import content
-from content import get_files, get_path
-from options import DEFAULT_QSS, OPTIONS
-from searchable_list import SearchableListBox
+from . import content
+from .options import DEFAULT_QSS, OPTIONS
+from .searchable_list import SearchableListBox
 
 logger = logging.getLogger("videowall")
 
@@ -56,7 +55,7 @@ class PlayerSpec:
 
     @classmethod
     def get(cls, spec: typing.Optional[dict]):
-        """Extract spec data from a dictionary"""
+        """Extract spec data from a dictionary."""
         filename = spec.get("filename")
         filename = Path(filename) if filename else None
         volume = spec.get("volume", OPTIONS.default_volume)
@@ -107,8 +106,8 @@ class Player(QWidget):
         self.video_row.addWidget(self.video, stretch=1)
 
         self.movie_list = SearchableListBox(parent=self)
-        self.movie_list.addItems(get_files())
-        self.movie_list.currentTextChanged.connect(lambda val: self.set_source(get_path(val)))
+        self.movie_list.addItems(content.get_files())
+        self.movie_list.currentTextChanged.connect(lambda val: self.set_source(content.get_path(val)))
         self.top_row = QHBoxLayout()
         self.top_row.addSpacing(30)
         self.top_row.addWidget(self.movie_list)

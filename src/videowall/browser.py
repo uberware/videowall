@@ -5,8 +5,8 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QWidget
 
-from options import OPTIONS
-from searchable_list import SearchableListBox
+from .options import OPTIONS
+from .searchable_list import SearchableListBox
 
 
 class Browser(QDialog):
@@ -23,9 +23,7 @@ class Browser(QDialog):
         self.list_box.addItems(items)
         self.list_box.setMinimumWidth(200)
         layout.addWidget(self.list_box)
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)

@@ -31,4 +31,5 @@ where = ["src"]
 line-length = 120
 
 [tool.ruff.lint]
-select = ["E", "F"]
+pydocstyle.convention = "google"
+select = ["D", "F", "I"]

@@ -3,9 +3,10 @@
 import logging
 import typing
 
-from PySide6.QtWidgets import QWidget, QSplitter, QVBoxLayout
 from PySide6.QtCore import Qt
-from player import Player
+from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
+
+from .player import Player
 
 logger = logging.getLogger("videowall")
 

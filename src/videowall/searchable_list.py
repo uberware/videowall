@@ -1,6 +1,6 @@
 """Custom ComboBox with searching."""
 
-from PySide6.QtCore import Qt, QSortFilterProxyModel, QSize
+from PySide6.QtCore import QSize, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import QComboBox, QCompleter
 
 
