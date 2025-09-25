@@ -10,10 +10,10 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor
 from PySide6.QtWidgets import QInputDialog, QMainWindow
 
-from . import player
-from .browser import browse_for_spec
-from .options import DEMO_SPEC, OPTIONS
-from .video_wall import VideoWall
+from videowall import player
+from videowall.browser import browse_for_spec
+from videowall.options import DEMO_SPEC, OPTIONS
+from videowall.video_wall import VideoWall
 
 logger = logging.getLogger("videowall")
 

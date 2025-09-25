@@ -5,8 +5,8 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QWidget
 
-from .options import OPTIONS
-from .searchable_list import SearchableListBox
+from videowall.options import OPTIONS
+from videowall.searchable_list import SearchableListBox
 
 
 class Browser(QDialog):

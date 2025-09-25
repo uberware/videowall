@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QVBoxLayout
 
-from .options import OPTIONS
+from videowall.options import OPTIONS
 
 logger = logging.getLogger("videowall")
 

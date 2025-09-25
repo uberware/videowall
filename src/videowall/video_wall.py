@@ -6,7 +6,7 @@ import typing
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
-from .player import Player
+from videowall.player import Player
 
 logger = logging.getLogger("videowall")
 

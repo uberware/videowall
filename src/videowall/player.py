@@ -21,9 +21,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from . import content
-from .options import DEFAULT_QSS, OPTIONS
-from .searchable_list import SearchableListBox
+from videowall import content
+from videowall.options import DEFAULT_QSS, OPTIONS
+from videowall.searchable_list import SearchableListBox
 
 logger = logging.getLogger("videowall")
 

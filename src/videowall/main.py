@@ -5,8 +5,8 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from .options import DEFAULT_QSS
-from .window import MainWindow
+from videowall.options import DEFAULT_QSS
+from videowall.window import MainWindow
 
 
 def main():
