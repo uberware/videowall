@@ -7,7 +7,7 @@ import typing
 from pathlib import Path
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QCursor
+from PySide6.QtGui import QAction, QCursor, QKeySequence
 from PySide6.QtWidgets import QInputDialog, QMainWindow
 
 from videowall import player
@@ -36,28 +36,28 @@ class MainWindow(QMainWindow):
 
         # File Menu
         menu_bar = self.menuBar()
-        file_menu = menu_bar.addMenu("File")
+        layout_menu = menu_bar.addMenu("Layout")
         new_action = QAction("New", self)
         new_action.setShortcut("Ctrl+N")
         new_action.triggered.connect(self.reset)
-        file_menu.addAction(new_action)
+        layout_menu.addAction(new_action)
         default_action = QAction("Demo", self)
         default_action.setShortcut("Ctrl+D")
         default_action.triggered.connect(lambda: self.reset(DEMO_SPEC))
-        file_menu.addAction(default_action)
+        layout_menu.addAction(default_action)
         last_action = QAction("Last", self)
         last_action.setShortcut("Ctrl+Z")
         last_action.triggered.connect(lambda: self.reset(self.read_spec()))
-        file_menu.addAction(last_action)
-        file_menu.addSeparator()
+        layout_menu.addAction(last_action)
+        layout_menu.addSeparator()
         load_action = QAction("Open", self)
         load_action.setShortcut("Ctrl+O")
         load_action.triggered.connect(self.load)
-        file_menu.addAction(load_action)
+        layout_menu.addAction(load_action)
         save_action = QAction("Save", self)
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save)
-        file_menu.addAction(save_action)
+        layout_menu.addAction(save_action)
 
         # Playback Menu
         play_menu = menu_bar.addMenu("Playback")
@@ -87,6 +87,14 @@ class MainWindow(QMainWindow):
         jog_forward_action.triggered.connect(lambda: player.jog(forward=True))
         play_menu.addAction(jog_forward_action)
         play_menu.addSeparator()
+        back_action = QAction("Back", self)
+        back_action.setShortcut(QKeySequence.StandardKey.MoveToPreviousPage)
+        back_action.triggered.connect(lambda: player.history(False))
+        play_menu.addAction(back_action)
+        forward_action = QAction("Forward", self)
+        forward_action.setShortcut(QKeySequence.StandardKey.MoveToNextPage)
+        forward_action.triggered.connect(lambda: player.history(True))
+        play_menu.addAction(forward_action)
         prev_action = QAction("Up 1", self)
         prev_action.setShortcut("Left")
         prev_action.triggered.connect(lambda: player.act(-1))

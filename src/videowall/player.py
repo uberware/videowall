@@ -52,6 +52,8 @@ class PlayerSpec:
     position: int
     mode: int
     control: bool
+    history: typing.List[Path]
+    at_history: typing.Optional[int]
 
     @classmethod
     def get(cls, spec: typing.Optional[dict]):
@@ -63,7 +65,9 @@ class PlayerSpec:
         position = spec.get("position", 0)
         mode = {"loop": cls.LOOP, "next": cls.NEXT, "random": cls.RANDOM}.get(spec.get("mode", "loop"), cls.LOOP)
         control = spec.get("control", False)
-        return cls(filename, volume, speed, position, mode, control)
+        history = [Path(x) for x in spec.get("history", [])]
+        at_history = spec.get("at_history", None)
+        return cls(filename, volume, speed, position, mode, control, history, at_history)
 
 
 class Player(QWidget):
@@ -196,6 +200,8 @@ class Player(QWidget):
         self.set_speed(spec.speed)
         self.set_volume(self.unmute_volume)
         self.pending_position = spec.position
+        self.history = spec.history
+        self.at_history = spec.at_history
         self.set_source(spec.filename)
         if spec.control:
             self._toggle_control()
@@ -214,6 +220,8 @@ class Player(QWidget):
             "position": self.player.position(),
             "mode": ["loop", "next", "random"][self.mode],
             "control": _runtime_data["control"] == self,
+            "history": [str(it) for it in self.history],
+            "at_history": self.at_history,
         }
 
     def jog(self, forward: bool):
@@ -304,6 +312,9 @@ class Player(QWidget):
         logger.info(f"{self} Setting source: {filename}")
         if filename and self.filename != filename:
             self.filename = filename
+            if self.at_history is None and (not self.history or self.history[-1] != filename):
+                logger.info(f"{self} Adding history: {filename}")
+                self.history.append(filename)
             self.player.setSource(QUrl.fromLocalFile(filename))
             self.player.play()
             with QSignalBlocker(self.movie_list):
@@ -318,12 +329,32 @@ class Player(QWidget):
             logger.info(f"{self} Looping")
             self.player.setPosition(0)
             self.player.play()
+        elif self.at_history is not None:
+            self.move_in_history(True)
         elif self.mode == PlayerSpec.NEXT:
             logger.info(f"{self} Next movie")
             self.skip(1)
         else:
             logger.info(f"{self} Random movie")
             self.skip(None)
+
+    def move_in_history(self, forward: bool):
+        """Move through the history of this player."""
+        if forward:
+            logger.info(f"{self} Moving forward in history")
+            if self.at_history is not None and self.at_history < len(self.history) - 2:
+                self.at_history += 1
+            else:
+                self.at_history = None
+        else:
+            logger.info(f"{self} Moving backward in history")
+            if self.at_history is None:
+                self.at_history = len(self.history) - 2
+            else:
+                self.at_history = max(0, self.at_history - 1)
+        index = len(self.history) - 1 if self.at_history is None else self.at_history
+        self.set_source(self.history[index])
+
 
     def _update_timeline_position(self, position):
         """Callback to update the timeline slider position during playback."""
@@ -565,3 +596,14 @@ def toggle():
     if player:
         logger.info("Toggle active player")
         player.show_interface()
+
+
+def history(forward: bool = True):
+    """Move through the history of the Player with control.
+
+    Args:
+        forward: True to move forward in history, False to move backward.
+    """
+    player = _runtime_data["control"]
+    if player:
+        player.move_in_history(forward)
