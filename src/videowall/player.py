@@ -353,7 +353,6 @@ class Player(QWidget):
         index = len(self.history) - 1 if self.at_history is None else self.at_history
         self.set_source(self.history[index])
 
-
     def _update_timeline_position(self, position):
         """Callback to update the timeline slider position during playback."""
         if self.pending_position:
