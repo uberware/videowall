@@ -135,8 +135,7 @@ class Player(QWidget):
             button.setText(label)
             button.setMinimumWidth(26)
             font = button.font()
-            font.setPointSize(12)
-            font.setBold(True)
+            font.setPointSize(13)
             button.setFont(font)
             return button
 
