@@ -148,9 +148,7 @@ class VideoWall(QWidget):
         self.deleteLater()
 
 
-def each_item_in(
-    video_wall: VideoWall, reverse: bool = False
-) -> typing.Generator[typing.Union[VideoWall, Player], None, None]:
+def each_item_in(video_wall: VideoWall, reverse: bool = False) -> typing.Iterator[typing.Union[VideoWall, Player]]:
     """Generator that yields each child item in the splitter."""
     index_list = range(video_wall.splitter.count())
     if reverse:
