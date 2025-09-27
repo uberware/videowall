@@ -151,7 +151,7 @@ class Player(QWidget):
         v_split_button = make_button("—")
         v_split_button.clicked.connect(lambda: self.split_vertical and self.split_vertical())
         self.buttons.addWidget(v_split_button)
-        self.transfer_button = make_button("↯")
+        self.transfer_button = make_button("➘")
         self.transfer_button.clicked.connect(self._process_transfer)
         self.buttons.addWidget(self.transfer_button)
         self.buttons.addStretch(1)
