@@ -1,12 +1,15 @@
 """Browser with auto-complete dropdown list to select with."""
 
+import logging
 import typing
 from pathlib import Path
 
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QLabel, QVBoxLayout, QWidget
 
-from videowall.options import OPTIONS
+from videowall import content
 from videowall.searchable_list import SearchableListBox
+
+logger = logging.getLogger("videowall")
 
 
 class Browser(QDialog):
@@ -35,7 +38,8 @@ def browse_for_spec(parent: QWidget) -> typing.Optional[Path]:
     Returns:
         the selected Path or None if canceled
     """
-    items = {it.stem: it for it in OPTIONS.spec_folder.glob("*.json") if not it.name.startswith(".")}
-    browser = Browser(parent, sorted(items.keys()))
+    browser = Browser(parent, content.get_files("layout"))
     if browser.exec() == QDialog.Accepted:
-        return items[browser.list_box.currentText()]
+        selected = content.get_path("layout", browser.list_box.currentText())
+        logger.info(f"Browser selected: {selected}")
+        return selected

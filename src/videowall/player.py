@@ -108,8 +108,8 @@ class Player(QWidget):
         self.video_row.addWidget(self.video, stretch=1)
 
         self.movie_list = SearchableListBox(parent=self)
-        self.movie_list.addItems(content.get_files())
-        self.movie_list.currentTextChanged.connect(lambda val: self.set_source(content.get_path(val)))
+        self.movie_list.addItems(content.get_files("content"))
+        self.movie_list.currentTextChanged.connect(lambda val: self.set_source(content.get_path("content", val)))
         self.top_row = QHBoxLayout()
         self.top_row.addSpacing(30)
         self.top_row.addWidget(self.movie_list)
@@ -316,7 +316,7 @@ class Player(QWidget):
             self.player.play()
             with QSignalBlocker(self.movie_list):
                 try:
-                    self.movie_list.on_completer_activated(content.get_label(filename))
+                    self.movie_list.on_completer_activated(content.get_label(OPTIONS.movie_folder, filename))
                 except ValueError:
                     logger.warning(f"source not in movie list folder: {OPTIONS.movie_folder}")
 
