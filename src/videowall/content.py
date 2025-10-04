@@ -109,7 +109,7 @@ def get_files(file_type: str) -> typing.List[str]:
     """Get a sorted list with the names of all files available."""
     if not _files:
         _search()
-    return sorted(_files[file_type].keys())
+    return sorted(_files[file_type].keys(), key=_sort_key)
 
 
 def get_path(file_type: str, name: str) -> Path:
@@ -119,4 +119,17 @@ def get_path(file_type: str, name: str) -> Path:
 
 def get_label(folder: Path, filepath: Path) -> str:
     """Get the relative label for a path based on the search folder."""
-    return f"{filepath.parent.relative_to(folder)}/{filepath.stem}"
+    folder = str(filepath.parent.relative_to(folder))
+    if folder == ".":
+        return filepath.stem
+    else:
+        return f"{folder}/{filepath.stem}"
+
+
+def _sort_key(filepath: str) -> typing.Tuple[str, str]:
+    """Custom sort by folder and filename."""
+    parts = filepath.rsplit("/", 1)
+    if len(parts) == 2:
+        return parts[0], parts[1]
+    else:
+        return "", filepath

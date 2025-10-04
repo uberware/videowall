@@ -27,7 +27,7 @@ from videowall.searchable_list import SearchableListBox
 
 logger = logging.getLogger("videowall")
 
-# internal data for handling position swapping between two Players current positions in the layout
+# internal data
 _runtime_data: dict = {
     "source": None,
     "all players": [],
