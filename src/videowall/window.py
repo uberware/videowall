@@ -61,6 +61,13 @@ class MainWindow(QMainWindow):
 
         # Playback Menu
         play_menu = menu_bar.addMenu("Playback")
+        full_screen_action = QAction("Full Screen", self)
+        full_screen_action.setShortcut("F")
+        full_screen_action.triggered.connect(
+            lambda: self.showNormal() if self.isFullScreen() else self.showFullScreen()
+        )
+        play_menu.addAction(full_screen_action)
+        play_menu.addSeparator()
         self.mute_action = QAction("Mute", self)
         self.mute_action.setShortcut("Escape")
         self.mute_action.triggered.connect(self.mute)
