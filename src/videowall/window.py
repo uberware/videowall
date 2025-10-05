@@ -61,6 +61,10 @@ class MainWindow(QMainWindow):
 
         # Playback Menu
         play_menu = menu_bar.addMenu("Playback")
+        toggle_action = QAction("Toggle UI", self)
+        toggle_action.setShortcut("Tab")
+        toggle_action.triggered.connect(lambda: player.toggle())
+        play_menu.addAction(toggle_action)
         full_screen_action = QAction("Full Screen", self)
         full_screen_action.setShortcut("F")
         full_screen_action.triggered.connect(
@@ -114,11 +118,6 @@ class MainWindow(QMainWindow):
         act_action.setShortcut("Return")
         act_action.triggered.connect(lambda: player.act())
         play_menu.addAction(act_action)
-        play_menu.addSeparator()
-        toggle_action = QAction("Toggle", self)
-        toggle_action.setShortcut("`")
-        toggle_action.triggered.connect(lambda: player.toggle())
-        play_menu.addAction(toggle_action)
 
     @property
     def root(self) -> VideoWall:
