@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         layout_menu.addAction(new_action)
         default_action = QAction("Demo", self)
         default_action.setShortcut("Ctrl+D")
-        default_action.triggered.connect(lambda: self.reset(DEMO_SPEC))
+        default_action.triggered.connect(lambda: self.reset(DEMO_SPEC, clear_open_layout=True))
         layout_menu.addAction(default_action)
         last_action = QAction("Last", self)
         last_action.setShortcut("Ctrl+Z")
@@ -164,17 +164,20 @@ class MainWindow(QMainWindow):
             self.open_layout = out_file
             self.write_spec(out_file)
 
-    def reset(self, spec: typing.Optional[dict] = None):
+    def reset(self, spec: typing.Optional[dict] = None, clear_open_layout: bool = False):
         """Discard the current layout and set to a new one.
 
         Args:
             spec: Optionally provide a layout spec dictionary
+            clear_open_layout: True will also clear the open_layout
         """
         logger.info(f"Loading layout spec: {spec}")
         old = self.root
         self.setCentralWidget(VideoWall(spec or {}))
         if old:
             old.close()
+        if clear_open_layout:
+            self.open_layout = None
 
     def read_spec(self, file: typing.Optional[Path] = None) -> dict:
         """Read a spec file and restore the window state (if available).
