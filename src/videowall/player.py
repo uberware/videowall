@@ -62,7 +62,7 @@ class PlayerSpec:
         filename = Path(filename) if filename else None
         volume = spec.get("volume", OPTIONS.default_volume)
         speed = spec.get("speed", 1.0)
-        position = spec.get("position", 0)
+        position = max(0, spec.get("position", 0) - OPTIONS.pre_roll)
         mode = {"loop": cls.LOOP, "next": cls.NEXT, "random": cls.RANDOM}.get(spec.get("mode", "loop"), cls.LOOP)
         control = spec.get("control", False)
         history = [Path(x) for x in spec.get("history", [])]

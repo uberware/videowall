@@ -47,6 +47,7 @@ class _Options:
     remaining_time: bool
     restore_window_state: bool
     spec_folder: Path
+    pre_roll: int
 
 
 def _load_options() -> _Options:
@@ -62,6 +63,7 @@ def _load_options() -> _Options:
         bool(data.get("remaining_time", True)),
         bool(data.get("restore_window_state", False)),
         Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
+        int(data.get("pre_roll", 2000))
     )
 
 
