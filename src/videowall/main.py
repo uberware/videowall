@@ -11,16 +11,20 @@ from videowall.window import MainWindow
 
 def main():
     """Main function to run the GUI."""
-    app = QApplication(sys.argv)
+    # Set up the logger
+    logger = logging.getLogger("videowall")
+    logging.basicConfig(level=logging.INFO)
 
+    # Get the Qt Application
+    app = QApplication(sys.argv)
     # Set the stylesheet
     app.setStyleSheet(DEFAULT_QSS)
-
     # Set a smaller point size
     app_font = app.font()
     app_font.setPointSize(10)
     app.setFont(app_font)
 
+    # Show the window and run the app loop
     window = MainWindow()
     window.show()
     logger.info("Running main loop")
@@ -28,6 +32,4 @@ def main():
 
 
 if __name__ == "__main__":
-    logger = logging.getLogger("videowall")
-    logging.basicConfig(level=logging.INFO)
     sys.exit(main())

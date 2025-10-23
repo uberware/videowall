@@ -1,2 +1,5 @@
 .idea
 Layouts
+venv*
+*.egg-info
+dist
