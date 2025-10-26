@@ -126,6 +126,11 @@ def get_label(folder: Path, filepath: Path) -> str:
         return f"{folder}/{filepath.stem}"
 
 
+def add_new_layout(filepath: Path):
+    """Add a layout path."""
+    _files["layout"][get_label(filepath.parent, filepath)] = filepath
+
+
 def _sort_key(filepath: str) -> typing.Tuple[str, str]:
     """Custom sort by folder and filename."""
     parts = filepath.rsplit("/", 1)

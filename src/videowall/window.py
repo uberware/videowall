@@ -10,7 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QCursor, QKeySequence
 from PySide6.QtWidgets import QInputDialog, QMainWindow
 
-from videowall import player
+from videowall import content, player
 from videowall.browser import browse_for_spec
 from videowall.options import DEMO_SPEC, OPTIONS
 from videowall.video_wall import VideoWall
@@ -168,6 +168,7 @@ class MainWindow(QMainWindow):
             out_file = OPTIONS.spec_folder / f"{text}.json"
             self.open_layout = out_file
             self.write_spec(out_file)
+            content.add_new_layout(out_file)
 
     def reset(self, spec: typing.Optional[dict] = None, clear_open_layout: bool = False):
         """Discard the current layout and set to a new one.
