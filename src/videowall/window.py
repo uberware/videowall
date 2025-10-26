@@ -29,10 +29,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         if OPTIONS.always_on_top:
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
-        # Default layout
         self.open_layout = None
         self.resize(1280, 720)
-        self.reset(self.read_spec() if OPTIONS.open_last_on_startup else None)
 
         # File Menu
         menu_bar = self.menuBar()
@@ -119,6 +117,9 @@ class MainWindow(QMainWindow):
         act_action.triggered.connect(lambda: player.act())
         play_menu.addAction(act_action)
 
+        # Default layout
+        self.reset(self.read_spec() if OPTIONS.open_last_on_startup else None)
+
     @property
     def root(self) -> VideoWall:
         """Return the current root VideoWall item."""
@@ -136,9 +137,13 @@ class MainWindow(QMainWindow):
             self.play_action.setText("Pause")
             self.root.play()
 
+    def is_muted(self) -> bool:
+        """Get if the GUI is currently muted."""
+        return self.mute_action.text() == "Unmute"
+
     def mute(self):
         """Toggle all volume."""
-        if self.mute_action.text() == "Mute":
+        if not self.is_muted():
             logger.info("Mute all")
             self.mute_action.setText("Unmute")
             self.root.mute()
@@ -174,6 +179,9 @@ class MainWindow(QMainWindow):
         logger.info(f"Loading layout spec: {spec}")
         old = self.root
         self.setCentralWidget(VideoWall(spec or {}))
+        if self.is_muted():
+            logger.info("Muting newly loaded layout")
+            self.root.mute()
         if old:
             old.close()
         if clear_open_layout:

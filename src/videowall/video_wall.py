@@ -75,6 +75,8 @@ class VideoWall(QWidget):
             player.setParent(self)
             player.split_horizontal = lambda: self.handle_split(player, Qt.Horizontal)
             player.split_vertical = lambda: self.handle_split(player, Qt.Vertical)
+            if self.muted:
+                player.mute()
             self.splitter.addWidget(player)
         elif item["type"] == "VideoWall":
             # nested VideoWall
@@ -131,10 +133,12 @@ class VideoWall(QWidget):
 
     def mute(self):
         """Notify all child Player and VideoWall widgets to mute."""
+        self.muted = True
         for widget in each_item_in(self):
             widget.mute()
 
     def unmute(self):
+        self.muted = False
         """Notify all child Player and VideoWall widgets to unmute."""
         for widget in each_item_in(self):
             widget.unmute()
