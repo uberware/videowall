@@ -25,7 +25,7 @@ DEMO_SPEC = {
             "type": "Player",
             "filename": "/Volumes/Movies-4/Godzilla.vs.Kong.2021.1080p.x264.ac3-nibo.mp4",
             "speed": 1.0,
-            "volume": 0.0,
+            "volume": 0.6,
             "position": 600000,
         },
     ],
@@ -63,7 +63,7 @@ def _load_options() -> _Options:
         bool(data.get("remaining_time", True)),
         bool(data.get("restore_window_state", False)),
         Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
-        int(data.get("pre_roll", 2000))
+        int(data.get("pre_roll", 2000)),
     )
 
 
