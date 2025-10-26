@@ -22,6 +22,7 @@ class VideoWall(QWidget):
             parent: Optional parent QWidget
         """
         super().__init__(parent)
+        self.muted = False
 
         # Determine orientation from spec
         orientation_str = spec.get("orientation", "horizontal").lower()
