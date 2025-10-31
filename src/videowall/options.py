@@ -42,12 +42,12 @@ class _Options:
     auto_update_layout: bool
     default_volume: float
     jog_interval: int
+    layout_folder: Path
     movie_folder: Path
     open_last_on_startup: bool
+    pre_roll: int
     remaining_time: bool
     restore_window_state: bool
-    spec_folder: Path
-    pre_roll: int
 
 
 def _load_options() -> _Options:
@@ -58,12 +58,12 @@ def _load_options() -> _Options:
         bool(data.get("auto_update_layout", True)),
         float(data.get("default_volume", 1.0)),
         int(data.get("jog_interval", 10000)),
+        Path(data.get("layout_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
         Path(data.get("movie_folder", "/Volumes/Movies-4")),
         bool(data.get("open_last_on_startup", True)),
-        bool(data.get("remaining_time", True)),
-        bool(data.get("restore_window_state", False)),
-        Path(data.get("spec_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
         int(data.get("pre_roll", 2000)),
+        bool(data.get("remaining_time", True)),
+        bool(data.get("restore_window_state", True)),
     )
 
 

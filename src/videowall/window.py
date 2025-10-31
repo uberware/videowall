@@ -21,7 +21,7 @@ logger = logging.getLogger("videowall")
 class MainWindow(QMainWindow):
     """The main window class."""
 
-    default_layout_file = OPTIONS.spec_folder / "last_layout.json"
+    default_layout_file = OPTIONS.layout_folder / "last_layout.json"
     """The default layout spec file with the last played layout."""
 
     def __init__(self):
@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
         text, ok = QInputDialog.getText(self, "Save", "Name of this layout:")
         if ok and text:
             text = text.replace("/", "_").replace("\\", "_")
-            out_file = OPTIONS.spec_folder / f"{text}.json"
+            out_file = OPTIONS.layout_folder / f"{text}.json"
             self.open_layout = out_file
             self.write_spec(out_file)
             content.add_new_layout(out_file)

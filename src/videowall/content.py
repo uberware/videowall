@@ -75,7 +75,7 @@ class ScanDialog(QDialog):
         self.thread = QThread()
         scan_list = [
             _FolderInfo("content", OPTIONS.movie_folder, [".mp4", ".mov", ".avi", ".mkv", ".wmv"]),
-            _FolderInfo("layout", OPTIONS.spec_folder, [".json"]),
+            _FolderInfo("layout", OPTIONS.layout_folder, [".json"]),
         ]
         self.worker = FolderScanner(scan_list)
         self.worker.moveToThread(self.thread)
