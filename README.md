@@ -30,8 +30,8 @@ Buttons:
 * `⇥` At the end, play the next video in the list
 * `?` At the end, play a random video from the list
 * `⚐` This player is controlled by the keyboard/menu playback options
-* `◀︎` Jog this player backward
-* `▶︎` Jog this player forward
+* `⋘` Jog this player backward
+* `⋙` Jog this player forward
 * `★` Perform the end operation immediately
 
 The top left slider controls playback speed (0% - 200%).
