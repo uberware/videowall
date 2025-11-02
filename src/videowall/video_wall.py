@@ -139,8 +139,8 @@ class VideoWall(QWidget):
             widget.mute()
 
     def unmute(self):
-        self.muted = False
         """Notify all child Player and VideoWall widgets to unmute."""
+        self.muted = False
         for widget in each_item_in(self):
             widget.unmute()
 
