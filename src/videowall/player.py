@@ -54,6 +54,7 @@ class PlayerSpec:
     control: bool
     history: typing.List[Path]
     at_history: typing.Optional[int]
+    fit: bool
 
     @classmethod
     def get(cls, spec: typing.Optional[dict]):
@@ -67,7 +68,8 @@ class PlayerSpec:
         control = spec.get("control", False)
         history = [Path(x) for x in spec.get("history", [])]
         at_history = spec.get("at_history", None)
-        return cls(filename, volume, speed, position, mode, control, history, at_history)
+        fit = spec.get("fit", True)
+        return cls(filename, volume, speed, position, mode, control, history, at_history, fit)
 
 
 class Player(QWidget):
@@ -101,6 +103,7 @@ class Player(QWidget):
         self.video_row.setSpacing(10)
         self.player = QMediaPlayer()
         self.video = QVideoWidget(parent=self)
+        self.video.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatioByExpanding)
         self.audio = QAudioOutput()
         self.player.setAudioOutput(self.audio)
         self.player.setVideoOutput(self.video)
@@ -154,6 +157,10 @@ class Player(QWidget):
         self.transfer_button.clicked.connect(self._process_transfer)
         self.buttons.addWidget(self.transfer_button)
         self.buttons.addStretch(1)
+        self.fit_button = make_button("⛶")
+        self.fit_button.clicked.connect(lambda: self.set_fit())
+        self.buttons.addWidget(self.fit_button)
+        self.buttons.addStretch(1)
         self.loop_movie_button = make_button("↻")
         self.loop_movie_button.clicked.connect(lambda: self.set_mode(PlayerSpec.LOOP))
         self.buttons.addWidget(self.loop_movie_button)
@@ -194,6 +201,7 @@ class Player(QWidget):
         self.show_interface(False)
         self.unmute_volume = spec.volume
         self.set_mode(spec.mode)
+        self.set_fit(spec.fit)
         self.set_speed(spec.speed)
         self.set_volume(self.unmute_volume)
         self.pending_position = spec.position
@@ -205,6 +213,11 @@ class Player(QWidget):
 
         # Install event filter on video widget
         self.video.installEventFilter(self)
+
+    @property
+    def fit(self) -> bool:
+        """Return True if this player is set to fit mode."""
+        return self.video.aspectRatioMode() == Qt.AspectRatioMode.KeepAspectRatioByExpanding
 
     @property
     def spec(self) -> dict:
@@ -219,6 +232,7 @@ class Player(QWidget):
             "control": _runtime_data["control"] == self,
             "history": [str(it) for it in self.history],
             "at_history": self.at_history,
+            "fit": self.fit,
         }
 
     def jog(self, forward: bool):
@@ -258,6 +272,17 @@ class Player(QWidget):
     def set_mode(self, mode):
         """Set the mode."""
         self.mode = mode
+        update_colors()
+
+    def set_fit(self, fit: typing.Optional[bool] = None):
+        """Set the fit value."""
+        fit = not self.fit if fit is None else fit
+        if fit:
+            logger.debug(f"{self} Setting to fit")
+            self.video.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+        else:
+            logger.debug(f"{self} Setting to contain")
+            self.video.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatio)
         update_colors()
 
     def set_volume(self, volume: float, set_unmute: bool = True):
@@ -507,6 +532,8 @@ def update_colors():
 
         def status_color(check):
             return "background-color: Chocolate" if check else DEFAULT_QSS
+
+        player.fit_button.setStyleSheet(status_color(player.fit))
 
         player.loop_movie_button.setStyleSheet(status_color(player.mode == PlayerSpec.LOOP))
         player.next_movie_button.setStyleSheet(status_color(player.mode == PlayerSpec.NEXT))

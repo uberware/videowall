@@ -26,6 +26,7 @@ Buttons:
 * `|` Split the player row horizontally
 * `—` Split the player column vertically
 * `➘` Swap two players
+* `⛶` Toggle scaling to fit inside or outside the player area
 * `↻` At the end, loop the current video
 * `⇥` At the end, play the next video in the list
 * `?` At the end, play a random video from the list
