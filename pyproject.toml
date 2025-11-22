@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "videowall"
-version = "1.0.0"
+version = "1.1.0"
 description = "A Qt video wall player"
 authors = [
     {name = "Robin Scher", email = "robin@uberware.net"},
@@ -36,3 +36,9 @@ line-length = 120
 [tool.ruff.lint]
 pydocstyle.convention = "google"
 select = ["D", "F", "I"]
+
+[tool.bandit]
+exclude_dirs = ["dist", "venv*", "*.egg-info"]
+skips = [
+    "B311",  # Standard pseudo-random generators are not suitable for security/cryptographic purposes
+]
