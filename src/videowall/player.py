@@ -90,7 +90,7 @@ class Player(QWidget):
             raise TypeError(f"Wrong spec: {spec}")
 
         spec = PlayerSpec.get(spec)
-        logger.debug(f"{self} Initializing Player: [{spec.speed}|{spec.volume}|{spec.mode}] {spec.filename}")
+        logger.debug(f"{self} Initializing Player: {spec}")
         self.split_horizontal = self.split_vertical = None
         self.filename = None
         self.mode = 0
@@ -200,7 +200,7 @@ class Player(QWidget):
         self.bottom_row.addWidget(end_play_button)
 
         self.setLayout(self.main_column)
-        self.show_interface(False)
+        self.show_interface(not bool(spec.filename))
         self.unmute_volume = spec.volume
         self.set_mode(spec.mode)
         self.set_fit(spec.fit)

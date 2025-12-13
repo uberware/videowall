@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 * Option not to play audio at all
 
+### Changed
+* New players show the full interface by default
+
 ## [1.1.0] - 2025-11-21
 
 ### Added
