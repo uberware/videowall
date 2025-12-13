@@ -1,5 +1,6 @@
 """The main entry point."""
 
+import argparse
 import logging
 import sys
 
@@ -9,11 +10,26 @@ from videowall.options import DEFAULT_QSS
 from videowall.window import MainWindow
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-v", "--verbose", action="store_true", help="More logging.")
+    group.add_argument("-q", "--quiet", action="store_true", help="Less logging.")
+    return parser.parse_args()
+
+
 def main():
     """Main function to run the GUI."""
+    # Get the command line overrides
+    parsed_args = parse_args()
+
     # Set up the logger
     logger = logging.getLogger("videowall")
-    logging.basicConfig(level=logging.INFO)
+    if parsed_args.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    elif not parsed_args.quiet:
+        logging.basicConfig(level=logging.INFO)
 
     # Get the Qt Application
     app = QApplication(sys.argv)

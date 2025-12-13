@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Option not to play audio at all
+* Command line parsing to adjust verbosity
 
 ### Changed
 * New players show the full interface by default
