@@ -1,6 +1,7 @@
 """Configuration."""
 
 import json
+import logging
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -33,6 +34,8 @@ DEMO_SPEC = {
 }
 """Default layout."""
 
+logger = logging.getLogger("videowall")
+
 
 @dataclass(frozen=True)
 class _Options:
@@ -45,6 +48,7 @@ class _Options:
     layout_folder: Path
     movie_folder: Path
     open_last_on_startup: bool
+    play_audio: bool
     pre_roll: int
     remaining_time: bool
     restore_window_state: bool
@@ -53,7 +57,7 @@ class _Options:
 def _load_options() -> _Options:
     """Loads the options and returns them as an Options object."""
     data = json.loads(OPTIONS_FILE.read_text() if OPTIONS_FILE.exists() else "{}")
-    return _Options(
+    options = _Options(
         bool(data.get("always_on_top", True)),
         bool(data.get("auto_update_layout", True)),
         float(data.get("default_volume", 1.0)),
@@ -61,10 +65,13 @@ def _load_options() -> _Options:
         Path(data.get("layout_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
         Path(data.get("movie_folder", "/Volumes/Movies-4")),
         bool(data.get("open_last_on_startup", True)),
+        bool(data.get("play_audio", True)),
         int(data.get("pre_roll", 2000)),
         bool(data.get("remaining_time", True)),
         bool(data.get("restore_window_state", True)),
     )
+    logger.debug(f"Options: {options}")
+    return options
 
 
 OPTIONS = _load_options()

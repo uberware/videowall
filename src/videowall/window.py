@@ -70,18 +70,23 @@ class MainWindow(QMainWindow):
         )
         play_menu.addAction(full_screen_action)
         play_menu.addSeparator()
-        self.mute_action = QAction("Mute", self)
-        self.mute_action.setShortcut("Escape")
-        self.mute_action.triggered.connect(self.mute)
-        play_menu.addAction(self.mute_action)
-        louder_action = QAction("Louder", self)
-        louder_action.setShortcut("Up")
-        louder_action.triggered.connect(lambda: player.volume(True))
-        play_menu.addAction(louder_action)
-        quieter_action = QAction("Quieter", self)
-        quieter_action.setShortcut("Down")
-        quieter_action.triggered.connect(lambda: player.volume(False))
-        play_menu.addAction(quieter_action)
+        if OPTIONS.play_audio:
+            self.mute_action = QAction("Mute", self)
+            self.mute_action.setShortcut("Escape")
+            self.mute_action.triggered.connect(self.mute)
+            play_menu.addAction(self.mute_action)
+            louder_action = QAction("Louder", self)
+            louder_action.setShortcut("Up")
+            louder_action.triggered.connect(lambda: player.volume(True))
+            play_menu.addAction(louder_action)
+            quieter_action = QAction("Quieter", self)
+            quieter_action.setShortcut("Down")
+            quieter_action.triggered.connect(lambda: player.volume(False))
+            play_menu.addAction(quieter_action)
+        else:
+            dummy_action = QAction("Audio Playback Disabled", self)
+            dummy_action.setEnabled(False)
+            play_menu.addAction(dummy_action)
         play_menu.addSeparator()
         self.play_action = QAction("Pause", self)
         self.play_action.setShortcut("Space")
@@ -139,7 +144,9 @@ class MainWindow(QMainWindow):
 
     def is_muted(self) -> bool:
         """Get if the GUI is currently muted."""
-        return self.mute_action.text() == "Unmute"
+        if OPTIONS.play_audio:
+            return self.mute_action.text() == "Unmute"
+        return False
 
     def mute(self):
         """Toggle all volume."""

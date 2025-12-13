@@ -54,6 +54,7 @@ Currently, you must create a configuration file manually. That file must be call
 | `layout_folder`        | `Path`  |         | The path where the layouts are stored                                                                                                          |
 | `movie_folder`         | `Path`  |         | The path where the movies are stored                                                                                                           |
 | `open_last_on_startup` | `bool`  | `True`  | When enabled, the last layout is loaded at startup                                                                                             |
+| `play_audio`           | `bool`  | `True`  | Disable to completely disable all audio playback and control                                                                                   |
 | `pre_roll`             | `int`   | `2000`  | The number of milliseconds to rewind when loading a layout                                                                                     |
 | `remaining_time`       | `bool`  | `True`  | When enabled, show remaining time instead of total time                                                                                        |
 | `restore_window_state` | `bool`  | `True`  | When enabled, the window state is restored when loading a layout                                                                               |

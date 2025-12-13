@@ -38,6 +38,12 @@ QSlider::add-page:vertical {
     border-radius: 4px;
 }
 
+QSlider::add-page:vertical:disabled {
+    background: #444;
+    border: 1px solid #666;
+    border-radius: 4px;
+}
+
 QSlider::handle:horizontal {
     background: #777;
     border: 1px solid #007aff;
@@ -63,6 +69,10 @@ QSlider::handle:hover {
 QSlider::handle:pressed {
     background: #2a2a2a;
     border: 1px solid #111;
+}
+
+QSlider::handle:disabled {
+    border-color: #444;
 }
 
 QSplitter::handle {

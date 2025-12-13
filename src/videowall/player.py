@@ -104,8 +104,9 @@ class Player(QWidget):
         self.player = QMediaPlayer()
         self.video = QVideoWidget(parent=self)
         self.video.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatioByExpanding)
-        self.audio = QAudioOutput()
-        self.player.setAudioOutput(self.audio)
+        if OPTIONS.play_audio:
+            self.audio = QAudioOutput()
+            self.player.setAudioOutput(self.audio)
         self.player.setVideoOutput(self.video)
         self.player.durationChanged.connect(self._update_timeline_duration)
         self.video_row.addWidget(self.video, stretch=1)
@@ -128,6 +129,7 @@ class Player(QWidget):
         self.settings.addWidget(self.speed_slider)
         self.volume_slider = QSlider(Qt.Vertical, parent=self)
         self.volume_slider.setRange(0, 100)
+        self.volume_slider.setEnabled(OPTIONS.play_audio)
         self.volume_slider.valueChanged.connect(lambda val: self.set_volume(slider_to_volume(val)))
         self.volume_slider.mouseDoubleClickEvent = lambda event: self.volume_slider.setSliderPosition(0)
         self.settings.addWidget(self.volume_slider)
@@ -226,7 +228,7 @@ class Player(QWidget):
             "type": "Player",
             "filename": str(self.filename) or None,
             "speed": self.player.playbackRate(),
-            "volume": self.audio.volume() or self.unmute_volume,
+            "volume": (self.audio.volume() or self.unmute_volume) if OPTIONS.play_audio else self.unmute_volume,
             "position": self.player.position(),
             "mode": ["loop", "next", "random"][self.mode],
             "control": _runtime_data["control"] == self,
@@ -293,7 +295,8 @@ class Player(QWidget):
             set_unmute: True also updates the unmute volume
         """
         with QSignalBlocker(self.volume_slider):
-            self.audio.setVolume(volume)
+            if OPTIONS.play_audio:
+                self.audio.setVolume(volume)
             self.volume_slider.setSliderPosition(volume_to_slider(volume))
             if set_unmute:
                 self.unmute_volume = volume
