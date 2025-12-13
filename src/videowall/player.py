@@ -401,9 +401,10 @@ class Player(QWidget):
     def _set_cursor(self, shape: Qt.CursorShape):
         """Set the cursor."""
         parent = self.parent()
-        while parent.parent():
-            parent = parent.parent()
-        parent.setCursor(shape)
+        if parent:
+            while parent.parent():
+                parent = parent.parent()
+            parent.setCursor(shape)
 
     def _update_timeline_duration(self):
         """Update the UI when the timeline duration is set."""
