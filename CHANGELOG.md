@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 * New players show the full interface by default
+* Mouse hiding now works on a timer
 
 ### Fixed
 * Possible crash trying to hide the mouse pointer

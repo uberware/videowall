@@ -259,7 +259,7 @@ class Player(QWidget):
         index = self.movie_list.currentIndex()
         count = self.movie_list.count()
         if direction is None:
-            direction = random.randint(1, count - 1)
+            direction = random.randint(1, count - 1)  # nosec B311 - not used for security
         logger.debug(f"{self} Skip: {direction}")
         self.movie_list.setCurrentIndex((index + direction + count) % count)
 
@@ -395,16 +395,6 @@ class Player(QWidget):
                     update_time_widget(self.total_time, self.player.duration() - position)
             if position == self.player.duration():
                 self.end_action()
-            if not _runtime_data["visible"]:
-                self._set_cursor(Qt.CursorShape.BlankCursor)
-
-    def _set_cursor(self, shape: Qt.CursorShape):
-        """Set the cursor."""
-        parent = self.parent()
-        if parent:
-            while parent.parent():
-                parent = parent.parent()
-            parent.setCursor(shape)
 
     def _update_timeline_duration(self):
         """Update the UI when the timeline duration is set."""
@@ -430,7 +420,6 @@ class Player(QWidget):
             self.video_row.insertLayout(0, self.settings)
             self.video_row.addLayout(self.buttons)
             self.main_column.addLayout(self.bottom_row)
-            self._set_cursor(Qt.CursorShape.ArrowCursor)
         else:
             _runtime_data["visible"].discard(self)
             self.main_column.setContentsMargins(0, 0, 0, 0)

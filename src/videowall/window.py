@@ -3,12 +3,13 @@
 import base64
 import json
 import logging
+import time
 import typing
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QCursor, QKeySequence
-from PySide6.QtWidgets import QInputDialog, QMainWindow
+from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow
 
 from videowall import content, player
 from videowall.browser import browse_for_spec
@@ -31,6 +32,12 @@ class MainWindow(QMainWindow):
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.open_layout = None
         self.resize(1280, 720)
+        self._cursor_hidden = False
+        self._last_time = time.time()
+        self._last_pos = QCursor.pos()
+        self._mouse_timer = QTimer(self)
+        self._mouse_timer.timeout.connect(self._check_mouse)
+        self._mouse_timer.start(250)
 
         # File Menu
         menu_bar = self.menuBar()
@@ -136,11 +143,13 @@ class MainWindow(QMainWindow):
             logger.info("Pause all")
             self.play_action.setText("Play")
             self.root.pause()
-            self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+            self._mouse_timer.stop()
+            QApplication.restoreOverrideCursor()
         else:
             logger.info("Play all")
             self.play_action.setText("Pause")
             self.root.play()
+            self._mouse_timer.start()
 
     def is_muted(self) -> bool:
         """Get if the GUI is currently muted."""
@@ -246,3 +255,18 @@ class MainWindow(QMainWindow):
         if OPTIONS.auto_update_layout and self.open_layout:
             self.write_spec(self.open_layout)
         super().closeEvent(event)
+
+    def _check_mouse(self):
+        """Check if the mouse is currently being used."""
+        current_pos = QCursor.pos()
+        current_time = time.time()
+        if current_pos != self._last_pos:
+            self._last_pos = current_pos
+            self._last_time = current_time
+            if self._cursor_hidden:
+                QApplication.restoreOverrideCursor()
+                self._cursor_hidden = False
+        else:
+            if not self._cursor_hidden and current_time - self._last_time >= OPTIONS.hide_mouse_delay:
+                QApplication.setOverrideCursor(Qt.BlankCursor)
+                self._cursor_hidden = True

@@ -44,6 +44,7 @@ class _Options:
     always_on_top: bool
     auto_update_layout: bool
     default_volume: float
+    hide_mouse_delay: float
     jog_interval: int
     layout_folder: Path
     movie_folder: Path
@@ -61,6 +62,7 @@ def _load_options() -> _Options:
         bool(data.get("always_on_top", True)),
         bool(data.get("auto_update_layout", True)),
         float(data.get("default_volume", 1.0)),
+        int(data.get("hide_mouse_delay", 3.0)),
         int(data.get("jog_interval", 10000)),
         Path(data.get("layout_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
         Path(data.get("movie_folder", "/Volumes/Movies-4")),
