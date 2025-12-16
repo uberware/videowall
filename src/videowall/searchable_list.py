@@ -1,6 +1,6 @@
 """Custom ComboBox with searching."""
 
-from PySide6.QtCore import QSize, QSortFilterProxyModel, Qt
+from PySide6.QtCore import QRegularExpression, QSize, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import QComboBox, QCompleter
 
 
@@ -27,8 +27,26 @@ class SearchableListBox(QComboBox):
         self.setCompleter(self.completer)
 
         # connect signals
-        self.lineEdit().textEdited[str].connect(self.filter_model.setFilterFixedString)
+        self.lineEdit().textEdited.connect(self._update_filter_regex)
         self.completer.activated.connect(self.on_completer_activated)
+
+    def _update_filter_regex(self, text):
+        """Turns a string into a regex for auto-complete."""
+        words = text.split()
+        if not words:
+            self.filter_model.setFilterRegularExpression(QRegularExpression())
+        else:
+            lookaheads = []
+            # All words except last: must exist anywhere
+            for word in words[:-1]:
+                lookaheads.append(rf"(?=.*\b{QRegularExpression.escape(word)}\b)")
+            # Last word: prefix match
+            last = QRegularExpression.escape(words[-1])
+            lookaheads.append(rf"(?=.*\b{last}.*)")
+            pattern = "^" + "".join(lookaheads) + ".*"
+            regex = QRegularExpression(pattern)
+            regex.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
+            self.filter_model.setFilterRegularExpression(regex)
 
     def on_completer_activated(self, text):
         """Callback for handling auto-complete."""

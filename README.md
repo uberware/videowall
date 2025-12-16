@@ -19,7 +19,7 @@ Playback features include:
 
 Click a player to show the control UI.
 
-Along the top is the list of movies found in the movie folder.
+Along the top is the list of movies found in the movie folder. You can type to filter the list. If you type multiple words separated by whitespace, it will find items with all words anywhere in the name.
 
 Buttons:
 * `⨉` Close the player
@@ -50,6 +50,7 @@ Currently, you must create a configuration file manually. That file must be call
 | `always_on_top`        | `bool`  | `True`  | The player window will always float above normal windows, even if the application is not active.                                               |
 | `auto_update_layout`   | `bool`  | `True`  | When enabled, the open layout will be updated with any changes during the playback session when the layout is changed or the window is closed. |
 | `default_volume`       | `float` | `1.0`   | (Range `0.0` - `1.0`) The volume to use when making a new player.                                                                              |
+| `hide_mouse_delay`     | `float` | `3.0`   | Seconds to wait before hiding the mouse pointer while playing                                                                                  |
 | `jog_interval`         | `int`   | `10000` | The number of milliseconds to move with the "jog" operation.                                                                                   |
 | `layout_folder`        | `Path`  |         | The path where the layouts are stored                                                                                                          |
 | `movie_folder`         | `Path`  |         | The path where the movies are stored                                                                                                           |
