@@ -119,7 +119,10 @@ def get_path(file_type: str, name: str) -> Path:
 
 def get_label(folder: Path, filepath: Path) -> str:
     """Get the relative label for a path based on the search folder."""
-    folder = str(filepath.parent.relative_to(folder))
+    try:
+        folder = str(filepath.parent.relative_to(folder))
+    except ValueError:
+        return ""
     if folder == ".":
         return filepath.stem
     else:

@@ -14,6 +14,7 @@ from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QSlider,
     QSplitter,
     QToolButton,
@@ -55,6 +56,7 @@ class PlayerSpec:
     history: typing.List[Path]
     at_history: typing.Optional[int]
     fit: bool
+    filter: str
 
     @classmethod
     def get(cls, spec: typing.Optional[dict]):
@@ -69,7 +71,8 @@ class PlayerSpec:
         history = [Path(x) for x in spec.get("history", [])]
         at_history = spec.get("at_history", None)
         fit = spec.get("fit", True)
-        return cls(filename, volume, speed, position, mode, control, history, at_history, fit)
+        filter = spec.get("filter", "")
+        return cls(filename, volume, speed, position, mode, control, history, at_history, fit, filter)
 
 
 class Player(QWidget):
@@ -111,12 +114,15 @@ class Player(QWidget):
         self.player.durationChanged.connect(self._update_timeline_duration)
         self.video_row.addWidget(self.video, stretch=1)
 
+        self.movie_filter = QLineEdit()
+        self.movie_filter.setPlaceholderText("Filter the movie list")
+        self.movie_filter.textChanged.connect(self._refill_movie_list)
         self.movie_list = SearchableListBox(parent=self)
-        self.movie_list.addItems(content.get_files("content"))
         self.movie_list.currentTextChanged.connect(lambda val: self.set_source(content.get_path("content", val)))
         self.top_row = QHBoxLayout()
         self.top_row.addSpacing(30)
-        self.top_row.addWidget(self.movie_list)
+        self.top_row.addWidget(self.movie_filter, stretch=1)
+        self.top_row.addWidget(self.movie_list, stretch=3)
         self.top_row.addSpacing(32)
 
         self.settings = QVBoxLayout()
@@ -201,6 +207,8 @@ class Player(QWidget):
 
         self.setLayout(self.main_column)
         self.show_interface(not bool(spec.filename))
+        self.movie_filter.setText(spec.filter)
+        self._refill_movie_list()
         self.unmute_volume = spec.volume
         self.set_mode(spec.mode)
         self.set_fit(spec.fit)
@@ -235,6 +243,7 @@ class Player(QWidget):
             "history": [str(it) for it in self.history],
             "at_history": self.at_history,
             "fit": self.fit,
+            "filter": self.movie_filter.text(),
         }
 
     def jog(self, forward: bool):
@@ -256,12 +265,13 @@ class Player(QWidget):
         Args:
             direction: -1 to go back 1, 1 to go forward 1, None move randomly
         """
-        index = self.movie_list.currentIndex()
-        count = self.movie_list.count()
+        # subtract 1 to account for the empty item at the top of the list
+        index = self.movie_list.currentIndex() - 1
+        count = self.movie_list.count() - 1
         if direction is None:
-            direction = random.randint(1, count - 1)  # nosec B311 - not used for security
+            direction = random.randint(1, count)  # nosec B311 - not used for security
         logger.debug(f"{self} Skip: {direction}")
-        self.movie_list.setCurrentIndex((index + direction + count) % count)
+        self.movie_list.setCurrentIndex(1 + (index + direction + count) % count)
 
     def play(self):
         """Start playback."""
@@ -343,10 +353,8 @@ class Player(QWidget):
             self.player.setSource(QUrl.fromLocalFile(filename))
             self.player.play()
             with QSignalBlocker(self.movie_list):
-                try:
-                    self.movie_list.on_completer_activated(content.get_label(OPTIONS.movie_folder, filename))
-                except ValueError:
-                    logger.warning(f"source not in movie list folder: {OPTIONS.movie_folder}")
+                label = content.get_label(OPTIONS.movie_folder, filename)
+                self._select_movie(label)
 
     def end_action(self):
         """What happens when we hit the end of the movie."""
@@ -465,6 +473,26 @@ class Player(QWidget):
         """Handle the control button clicks."""
         _runtime_data["control"] = None if _runtime_data["control"] == self else self
         update_colors()
+
+    def _refill_movie_list(self):
+        """Refill the movie list accounting for the current r."""
+        with QSignalBlocker(self.movie_list):
+            words = self.movie_filter.text().split()
+            logger.debug(f"{self} Refilling movie list with filter: {words}")
+            last_sel = self.movie_list.currentText()
+            self.movie_list.clear()
+            self.movie_list.addItems(
+                [""] + list(f for f in content.get_files("content") if not words or all(w in f for w in words))
+            )
+            self._select_movie(last_sel)
+
+    def _select_movie(self, movie: str):
+        """Update the movie list with the given movie name, if possible."""
+        index = self.movie_list.findText(movie)
+        if index != -1:
+            self.movie_list.setCurrentIndex(index)
+        else:
+            logger.warning(f"Source not in movie list: {self.filename}")
 
     def closeEvent(self, event):
         """Override the close event to remove this Player from the transfer list."""

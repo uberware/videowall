@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* Players have a persistent filter for the movie list
 * Option not to play audio at all
 * Command line parsing to adjust verbosity
 
