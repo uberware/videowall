@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
             file: A Path object with the destination file name
             include_open_layout: True includes the open layout filename
         """
-        logger.info(f"Saving spec: {file}")
+        logger.info(f"Saving spec: {file} (sparse = {OPTIONS.sparse_spec})")
         file.parent.mkdir(exist_ok=True)
         data = {
             "geometry": base64.b64encode(self.saveGeometry()).decode(),

@@ -53,6 +53,7 @@ class _Options:
     pre_roll: int
     remaining_time: bool
     restore_window_state: bool
+    sparse_spec: bool
 
 
 def _load_options() -> _Options:
@@ -71,6 +72,7 @@ def _load_options() -> _Options:
         int(data.get("pre_roll", 2000)),
         bool(data.get("remaining_time", True)),
         bool(data.get("restore_window_state", True)),
+        bool(data.get("sparse_spec", True)),
     )
     logger.debug(f"Options: {options}")
     return options

@@ -42,9 +42,9 @@ class PlayerSpec:
     """Player settings class."""
 
     # constants for the loop mode options
-    LOOP = 0
-    NEXT = 1
-    RANDOM = 2
+    LOOP = "loop"
+    NEXT = "next"
+    RANDOM = "random"
 
     # Player data
     filename: Path
@@ -61,6 +61,7 @@ class PlayerSpec:
     @classmethod
     def get(cls, spec: typing.Optional[dict]):
         """Extract spec data from a dictionary."""
+        spec = spec or {}
         filename = spec.get("filename")
         filename = Path(filename) if filename else None
         volume = spec.get("volume", OPTIONS.default_volume)
@@ -232,19 +233,23 @@ class Player(QWidget):
     @property
     def spec(self) -> dict:
         """Get the current player spec dictionary for this object."""
-        return {
+        result = {
             "type": "Player",
             "filename": str(self.filename) or None,
             "speed": self.player.playbackRate(),
             "volume": (self.audio.volume() or self.unmute_volume) if OPTIONS.play_audio else self.unmute_volume,
             "position": self.player.position(),
-            "mode": ["loop", "next", "random"][self.mode],
+            "mode": str(self.mode),
             "control": _runtime_data["control"] == self,
             "history": [str(it) for it in self.history],
             "at_history": self.at_history,
             "fit": self.fit,
             "filter": self.movie_filter.text(),
         }
+        if OPTIONS.sparse_spec:
+            default = PlayerSpec.get(None)
+            return {k: v for k, v in result.items() if not hasattr(default, k) or getattr(default, k) != v}
+        return result
 
     def jog(self, forward: bool):
         """Move a little forward or backward in the timeline.

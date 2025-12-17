@@ -59,3 +59,4 @@ Currently, you must create a configuration file manually. That file must be call
 | `pre_roll`             | `int`   | `2000`  | The number of milliseconds to rewind when loading a layout                                                                                     |
 | `remaining_time`       | `bool`  | `True`  | When enabled, show remaining time instead of total time                                                                                        |
 | `restore_window_state` | `bool`  | `True`  | When enabled, the window state is restored when loading a layout                                                                               |
+| `sparse_spec`          | `bool`  | `True`  | When enabled, the spec file will only include settings not at the current default. When disabled, all playback settings are always saved.      |

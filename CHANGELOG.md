@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Players have a persistent filter for the movie list
+* Option to save sparse spec files without default values
 * Option not to play audio at all
 * Command line parsing to adjust verbosity
 
