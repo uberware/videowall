@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "videowall"
-version = "1.1.0"
+version = "1.2.0"
 description = "A Qt video wall player"
 authors = [
     {name = "Robin Scher", email = "robin@uberware.net"},
