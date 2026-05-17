@@ -1,5 +1,7 @@
+._*
 .idea
 Layouts
 venv*
 *.egg-info
 dist
+.claude
