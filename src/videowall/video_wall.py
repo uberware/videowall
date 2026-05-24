@@ -6,6 +6,7 @@ import typing
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
+from videowall.options import OPTIONS
 from videowall.player import Player
 
 logger = logging.getLogger("videowall")
@@ -35,6 +36,7 @@ class VideoWall(QWidget):
         logger.debug(f"Initializing VideoWall {self} {items}")
         # Build the cells
         self.splitter = QSplitter(self.orientation, self)
+        self.splitter.setHandleWidth(OPTIONS.splitter_handle_width)
         for item in items:
             self.append_item(item)
         # Resize the cells
@@ -143,6 +145,21 @@ class VideoWall(QWidget):
         self.muted = False
         for widget in each_item_in(self):
             widget.unmute()
+
+    def set_locked(self, locked: bool):
+        """Lock or unlock this VideoWall and all nested VideoWalls.
+
+        When locked the splitter handle width is set to 0, preventing dragging
+        and eliminating the gap between players. When unlocked it is restored
+        to OPTIONS.splitter_handle_width.
+
+        Args:
+            locked: True to lock, False to unlock.
+        """
+        self.splitter.setHandleWidth(0 if locked else OPTIONS.splitter_handle_width)
+        for widget in each_item_in(self):
+            if isinstance(widget, VideoWall):
+                widget.set_locked(locked)
 
     def closeEvent(self, event):
         """Override the close event to ensure the children close cleanly."""

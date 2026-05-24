@@ -36,7 +36,7 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 | `video_wall.py` | `VideoWall(QWidget)` — recursive splitter container that holds `Player` or nested `VideoWall` children |
 | `player.py` | `Player(QWidget)` — individual video cell with full playback controls; also contains module-level functions (`act`, `jog`, `volume`, `toggle`, `history`) that operate on the currently-controlled player |
 | `content.py` | Background folder scanner (`FolderScanner`/`ScanDialog`) that indexes movie and layout files on first access |
-| `options.py` | Loads `~/videowall_settings.json` into a frozen `_Options` dataclass; `OPTIONS` is a module-level singleton |
+| `options.py` | Loads `~/videowall_settings.json` into a frozen `_Options` dataclass; `OPTIONS` is a module-level singleton. Includes `splitter_handle_width` (default `5` px) — the divider width used between players when unlocked. |
 | `browser.py` | Dialog for browsing and selecting saved layouts |
 | `searchable_list.py` | `SearchableListBox(QComboBox)` — multi-word filtered combobox used for movie and layout selection |
 
@@ -44,9 +44,9 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 
 **Recursive layout tree**: `VideoWall` wraps a `QSplitter` and can contain `Player` widgets or nested `VideoWall` widgets. Splitting a player in the same direction as the parent adds a sibling; splitting in the opposite direction replaces the player with a new nested `VideoWall`.
 
-**`spec` round-trip serialization**: Both `VideoWall` and `Player` expose a `.spec` property that returns a plain dict, and accept a `spec` dict in `__init__`. Layout files are JSON with `geometry`, `state` (base64-encoded Qt window state), and `spec` (the recursive tree). When `sparse_spec` is enabled, `Player.spec` omits keys whose values match the defaults.
+**`spec` round-trip serialization**: Both `VideoWall` and `Player` expose a `.spec` property that returns a plain dict, and accept a `spec` dict in `__init__`. Layout files are JSON with `geometry`, `state` (base64-encoded Qt window state), `spec` (the recursive tree), and `locked` (boolean). When `sparse_spec` is enabled, `Player.spec` omits keys whose values match the defaults.
 
-**Module-level shared state in `player.py`**: `_runtime_data` dict tracks which `Player` has keyboard/menu control (`"control"`), which is the source of an in-progress swap (`"source"`), all live players (`"all players"`), and which have visible UI (`"visible"`). The module-level `act()`, `jog()`, `volume()`, etc. functions forward to `_runtime_data["control"]`.
+**Module-level shared state in `player.py`**: `_runtime_data` dict tracks which `Player` has keyboard/menu control (`"control"`), which is the source of an in-progress swap (`"source"`), all live players (`"all players"`), which have visible UI (`"visible"`), and whether the layout is locked (`"locked"`). The module-level `act()`, `jog()`, `volume()`, etc. functions forward to `_runtime_data["control"]`. `set_locked()` and `is_locked()` manage the locked flag.
 
 **`OPTIONS` singleton**: Loaded once at import from `~/videowall_settings.json`. All modules read from this; it is never mutated at runtime.
 
@@ -58,6 +58,7 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 {
   "geometry": "<base64>",
   "state": "<base64>",
+  "locked": false,
   "spec": {
     "type": "VideoWall",
     "orientation": "horizontal",

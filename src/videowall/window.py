@@ -66,10 +66,14 @@ class MainWindow(QMainWindow):
 
         # Playback Menu
         play_menu = menu_bar.addMenu("Playback")
-        toggle_action = QAction("Toggle UI", self)
-        toggle_action.setShortcut("Tab")
-        toggle_action.triggered.connect(lambda: player.toggle())
-        play_menu.addAction(toggle_action)
+        self.toggle_action = QAction("Toggle UI", self)
+        self.toggle_action.setShortcut("Tab")
+        self.toggle_action.triggered.connect(lambda: player.toggle())
+        play_menu.addAction(self.toggle_action)
+        self.lock_action = QAction("Lock", self)
+        self.lock_action.setShortcut("\\")
+        self.lock_action.triggered.connect(self.toggle_lock)
+        play_menu.addAction(self.lock_action)
         full_screen_action = QAction("Full Screen", self)
         full_screen_action.setShortcut("F")
         full_screen_action.triggered.connect(
@@ -129,6 +133,9 @@ class MainWindow(QMainWindow):
         act_action.triggered.connect(lambda: player.act())
         play_menu.addAction(act_action)
 
+        # Pending locked state to be applied by the next reset() call
+        self._pending_locked = False
+
         # Default layout
         self.reset(self.read_spec() if OPTIONS.open_last_on_startup else None)
 
@@ -168,6 +175,21 @@ class MainWindow(QMainWindow):
             self.mute_action.setText("Mute")
             self.root.unmute()
 
+    def toggle_lock(self):
+        """Toggle the locked state of the layout."""
+        self._apply_lock(not player.is_locked())
+
+    def _apply_lock(self, locked: bool):
+        """Apply the given locked state to runtime data, the VideoWall tree, and the menu.
+
+        Args:
+            locked: True to lock, False to unlock.
+        """
+        player.set_locked(locked)
+        self.root.set_locked(locked)
+        self.lock_action.setText("Unlock" if locked else "Lock")
+        self.toggle_action.setEnabled(not locked)
+
     def load(self):
         """Open the Load dialog box and load a selected layout."""
         spec_file = browse_for_spec(self)
@@ -193,6 +215,8 @@ class MainWindow(QMainWindow):
             spec: Optionally provide a layout spec dictionary
             clear_open_layout: True will also clear the open_layout
         """
+        locked = self._pending_locked
+        self._pending_locked = False
         logger.info(f"Loading layout spec: {spec}")
         old = self.root
         self.setCentralWidget(VideoWall(spec or {}))
@@ -203,6 +227,7 @@ class MainWindow(QMainWindow):
             old.close()
         if clear_open_layout:
             self.open_layout = None
+        self._apply_lock(locked)
 
     def read_spec(self, file: typing.Optional[Path] = None) -> dict:
         """Read a spec file and restore the window state (if available).
@@ -225,6 +250,7 @@ class MainWindow(QMainWindow):
                 self.restoreGeometry(base64.b64decode(data["geometry"]))
             if OPTIONS.restore_window_state and "state" in data:
                 self.restoreState(base64.b64decode(data["state"]))
+            self._pending_locked = bool(data.get("locked", False))
             if "spec" in data:
                 if not self.open_layout and "file" in data:
                     self.open_layout = Path(data["file"])
@@ -244,6 +270,7 @@ class MainWindow(QMainWindow):
             "geometry": base64.b64encode(self.saveGeometry()).decode(),
             "state": base64.b64encode(self.saveState()).decode(),
             "spec": self.root.spec,
+            "locked": player.is_locked(),
         }
         if include_open_layout and self.open_layout:
             data["file"] = str(self.open_layout)

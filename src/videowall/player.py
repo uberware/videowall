@@ -34,6 +34,7 @@ _runtime_data: dict = {
     "all players": [],
     "control": None,
     "visible": set(),
+    "locked": False,
 }
 
 
@@ -512,7 +513,7 @@ class Player(QWidget):
     def eventFilter(self, obj, event):
         """Event filter for the video widget to handle clicks to adjust Panel state."""
         if obj == self.video and event.type() == QEvent.MouseButtonPress:
-            if event.button() == Qt.LeftButton:
+            if event.button() == Qt.LeftButton and not is_locked():
                 # Toggle palette visibility
                 self.show_interface()
             return True  # consume the click
@@ -656,3 +657,22 @@ def history(forward: bool = True):
     player = _runtime_data["control"]
     if player:
         player.move_in_history(forward)
+
+
+def set_locked(locked: bool):
+    """Set the global locked state.
+
+    When locking, all open player interfaces are immediately closed.
+
+    Args:
+        locked: True to lock, False to unlock.
+    """
+    _runtime_data["locked"] = locked
+    if locked:
+        for p in _runtime_data["all players"]:
+            p.show_interface(False)
+
+
+def is_locked() -> bool:
+    """Return True if the layout is currently locked."""
+    return _runtime_data["locked"]

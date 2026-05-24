@@ -54,6 +54,7 @@ class _Options:
     remaining_time: bool
     restore_window_state: bool
     sparse_spec: bool
+    splitter_handle_width: int
 
 
 def _load_options() -> _Options:
@@ -73,6 +74,7 @@ def _load_options() -> _Options:
         bool(data.get("remaining_time", True)),
         bool(data.get("restore_window_state", True)),
         bool(data.get("sparse_spec", True)),
+        int(data.get("splitter_handle_width", 5)),
     )
     logger.debug(f"Options: {options}")
     return options

@@ -8,6 +8,7 @@ Playback features include:
 * Play, Pause, Mute the whole wall
 * Keyboard control for a primary video
 * Save wall layouts and automatic recovery of last layout
+* Lock the layout to prevent accidental changes during playback
 * Lots of options for customizing operation
 
 ## Requirements
@@ -60,3 +61,4 @@ Currently, you must create a configuration file manually. That file must be call
 | `remaining_time`       | `bool`  | `True`  | When enabled, show remaining time instead of total time                                                                                        |
 | `restore_window_state` | `bool`  | `True`  | When enabled, the window state is restored when loading a layout                                                                               |
 | `sparse_spec`          | `bool`  | `True`  | When enabled, the spec file will only include settings not at the current default. When disabled, all playback settings are always saved.      |
+| `splitter_handle_width` | `int`  | `5`     | Width in pixels of the dividers between players. Set to `0` for no gap. When the layout is locked this is overridden to `0` automatically.    |
