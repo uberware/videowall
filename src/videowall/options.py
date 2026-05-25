@@ -47,6 +47,7 @@ class _Options:
     hide_mouse_delay: float
     jog_interval: int
     layout_folder: Path
+    lock_titlebar: bool
     movie_folder: Path
     open_last_on_startup: bool
     play_audio: bool
@@ -67,6 +68,7 @@ def _load_options() -> _Options:
         int(data.get("hide_mouse_delay", 3.0)),
         int(data.get("jog_interval", 10000)),
         Path(data.get("layout_folder", "/Volumes/Dev/Projects/Video Wall/Layouts/")),
+        bool(data.get("lock_titlebar", False)),
         Path(data.get("movie_folder", "/Volumes/Movies-4")),
         bool(data.get("open_last_on_startup", True)),
         bool(data.get("play_audio", True)),

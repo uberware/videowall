@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Menu command to lock/unlock the layout
+* `lock_titlebar` option
 * [CLAUDE.md](CLAUDE.md) Claude code integration document
 
 ## [1.2.0] - 2025-12-18

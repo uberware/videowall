@@ -36,7 +36,7 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 | `video_wall.py` | `VideoWall(QWidget)` — recursive splitter container that holds `Player` or nested `VideoWall` children |
 | `player.py` | `Player(QWidget)` — individual video cell with full playback controls; also contains module-level functions (`act`, `jog`, `volume`, `toggle`, `history`) that operate on the currently-controlled player |
 | `content.py` | Background folder scanner (`FolderScanner`/`ScanDialog`) that indexes movie and layout files on first access |
-| `options.py` | Loads `~/videowall_settings.json` into a frozen `_Options` dataclass; `OPTIONS` is a module-level singleton. Includes `splitter_handle_width` (default `5` px) — the divider width used between players when unlocked. |
+| `options.py` | Loads `~/videowall_settings.json` into a frozen `_Options` dataclass; `OPTIONS` is a module-level singleton. See [Options reference](#options-reference) below for all available settings. |
 | `browser.py` | Dialog for browsing and selecting saved layouts |
 | `searchable_list.py` | `SearchableListBox(QComboBox)` — multi-word filtered combobox used for movie and layout selection |
 
@@ -83,3 +83,25 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 ```
 
 `mode` is one of `"loop"`, `"next"`, `"random"`. Layout files are stored in `OPTIONS.layout_folder`; `last_layout.json` is auto-saved on exit.
+
+## Options reference
+
+All options live in `~/videowall_settings.json` and are loaded once at startup into the frozen `OPTIONS` singleton. The dataclass fields are declared in alphabetical order in `options.py`; keep that order when adding new options.
+
+| Option                  | Type    | Default | Description                                                                                                                                     |
+|-------------------------|---------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `always_on_top`         | `bool`  | `True`  | The player window floats above normal windows even when the app is not active.                                                                  |
+| `auto_update_layout`    | `bool`  | `True`  | When enabled, the open layout file is rewritten with any changes when the layout changes or the window closes.                                  |
+| `default_volume`        | `float` | `1.0`   | Range `0.0`–`1.0`. Volume applied when creating a new player.                                                                                   |
+| `hide_mouse_delay`      | `float` | `3.0`   | Seconds of inactivity before the mouse pointer is hidden during playback.                                                                       |
+| `jog_interval`          | `int`   | `10000` | Milliseconds to seek per jog operation.                                                                                                         |
+| `layout_folder`         | `Path`  |         | Directory where layout JSON files are stored.                                                                                                   |
+| `lock_titlebar`         | `bool`  | `False` | When `False`, locking the layout hides the window titlebar. When `True`, the titlebar stays visible while locked. Unlocking always restores it. |
+| `movie_folder`          | `Path`  |         | Root directory scanned for movie files.                                                                                                         |
+| `open_last_on_startup`  | `bool`  | `True`  | When enabled, the last saved layout is loaded automatically on startup.                                                                         |
+| `play_audio`            | `bool`  | `True`  | Set to `False` to disable all audio playback and hide audio controls.                                                                           |
+| `pre_roll`              | `int`   | `2000`  | Milliseconds to rewind when restoring a layout, so playback starts slightly before the saved position.                                          |
+| `remaining_time`        | `bool`  | `True`  | When enabled, the time display shows remaining time; otherwise shows total duration.                                                            |
+| `restore_window_state`  | `bool`  | `True`  | When enabled, window geometry and state are restored from the layout file.                                                                      |
+| `sparse_spec`           | `bool`  | `True`  | When enabled, `Player.spec` omits keys whose values match defaults, keeping layout files compact.                                               |
+| `splitter_handle_width` | `int`   | `5`     | Width in pixels of the dividers between players. Overridden to `0` automatically when the layout is locked.                                     |

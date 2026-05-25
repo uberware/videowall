@@ -54,6 +54,7 @@ Currently, you must create a configuration file manually. That file must be call
 | `hide_mouse_delay`     | `float` | `3.0`   | Seconds to wait before hiding the mouse pointer while playing                                                                                  |
 | `jog_interval`         | `int`   | `10000` | The number of milliseconds to move with the "jog" operation.                                                                                   |
 | `layout_folder`        | `Path`  |         | The path where the layouts are stored                                                                                                          |
+| `lock_titlebar`        | `bool`  | `False` | When `False`, locking the layout hides the window titlebar for a cleaner look. When `True`, the titlebar remains visible while locked. Unlocking always restores the titlebar. |
 | `movie_folder`         | `Path`  |         | The path where the movies are stored                                                                                                           |
 | `open_last_on_startup` | `bool`  | `True`  | When enabled, the last layout is loaded at startup                                                                                             |
 | `play_audio`           | `bool`  | `True`  | Disable to completely disable all audio playback and control                                                                                   |

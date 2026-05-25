@@ -182,6 +182,9 @@ class MainWindow(QMainWindow):
     def _apply_lock(self, locked: bool):
         """Apply the given locked state to runtime data, the VideoWall tree, and the menu.
 
+        When locking, hides the window titlebar unless ``OPTIONS.lock_titlebar`` is True.
+        When unlocking, the titlebar is always restored regardless of ``OPTIONS.lock_titlebar``.
+
         Args:
             locked: True to lock, False to unlock.
         """
@@ -189,6 +192,13 @@ class MainWindow(QMainWindow):
         self.root.set_locked(locked)
         self.lock_action.setText("Unlock" if locked else "Lock")
         self.toggle_action.setEnabled(not locked)
+        flags = self.windowFlags()
+        if locked and not OPTIONS.lock_titlebar:
+            flags |= Qt.FramelessWindowHint
+        else:
+            flags &= ~Qt.FramelessWindowHint
+        self.setWindowFlags(flags)
+        self.show()
 
     def load(self):
         """Open the Load dialog box and load a selected layout."""
