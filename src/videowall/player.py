@@ -483,12 +483,12 @@ class Player(QWidget):
     def _refill_movie_list(self):
         """Refill the movie list accounting for the current r."""
         with QSignalBlocker(self.movie_list):
-            words = self.movie_filter.text().split()
+            words = self.movie_filter.text().lower().split()
             logger.debug(f"{self} Refilling movie list with filter: {words}")
             last_sel = self.movie_list.currentText()
             self.movie_list.clear()
             self.movie_list.addItems(
-                [""] + list(f for f in content.get_files("content") if not words or all(w in f for w in words))
+                [""] + list(f for f in content.get_files("content") if not words or all(w in f.lower() for w in words))
             )
             self._select_movie(last_sel)
 

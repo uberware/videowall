@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `lock_titlebar` option
 * [CLAUDE.md](CLAUDE.md) Claude code integration document
 
+### Fixed
+* Player filter is not case-sensitive
+
 ## [1.2.0] - 2025-12-18
 
 ### Added
