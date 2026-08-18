@@ -290,6 +290,9 @@ class Player(QWidget):
     def set_mode(self, mode):
         """Set the mode."""
         self.mode = mode
+        # Let the backend wrap the media itself in loop mode. Restarting by hand tears down and
+        # rebuilds the audio renderer on every single loop, which is needless churn.
+        self.player.setLoops(QMediaPlayer.Loops.Infinite if mode == PlayerSpec.LOOP else QMediaPlayer.Loops.Once)
         update_colors()
 
     def set_fit(self, fit: typing.Optional[bool] = None):
@@ -365,7 +368,7 @@ class Player(QWidget):
     def end_action(self):
         """What happens when we hit the end of the movie."""
         if self.mode == PlayerSpec.LOOP:
-            logger.info(f"{self} Looping")
+            logger.info(f"{self} Looping - {self.filename}")
             self.player.setPosition(0)
             self.player.play()
         elif self.at_history is not None:
@@ -407,7 +410,9 @@ class Player(QWidget):
                 update_time_widget(self.current_time, position)
                 if OPTIONS.remaining_time:
                     update_time_widget(self.total_time, self.player.duration() - position)
-            if position == self.player.duration():
+            # Loop mode wraps in the backend, which still reports a position of exactly
+            # duration; restarting here as well would defeat that.
+            if position == self.player.duration() and self.mode != PlayerSpec.LOOP:
                 self.end_action()
 
     def _update_timeline_duration(self):
