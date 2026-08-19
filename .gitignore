@@ -5,3 +5,5 @@ venv*
 *.egg-info
 dist
 .claude
+.pytest_cache
+__pycache__

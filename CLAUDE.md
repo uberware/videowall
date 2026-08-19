@@ -6,18 +6,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Run the app (activate venv first)
-source venv-build/bin/activate
+source venv-test/bin/activate
 python -m videowall          # or: videowall (after pip install -e .)
 
+# Test
+pip install -e ".[test]"
+pytest
+
 # Lint
-ruff check src/
-ruff format src/
+ruff check src/ tests/
+ruff format src/ tests/
 
 # Security scan
 bandit -r src/
 ```
 
-There are no automated tests in this project.
+`venv-test` is the runtime environment; `venv-build` only holds packaging tools and has no
+PySide6 installed.
+
+Tests run headless via `QT_QPA_PLATFORM=offscreen`, which `tests/conftest.py` sets before
+PySide6 is imported. The fixtures replace the `OPTIONS` singleton and the `content` folder
+scan, so a test run never reads `~/videowall_settings.json`, scans the movie folder, or
+touches saved layouts.
 
 ## Release / CI
 
