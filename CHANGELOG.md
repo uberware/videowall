@@ -10,9 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Menu command to lock/unlock the layout
 * `lock_titlebar` option
 * [CLAUDE.md](CLAUDE.md) Claude code integration document
+* Automated test suite run with `pytest`
+* GitHub workflow to publish to PyPI
 
 ### Fixed
 * Player filter is not case-sensitive
+* Audio device switches to 16 kHz mono on macOS
+* Keyboard shortcuts stop working when the movie filter keeps focus
+* Opening a new layout while paused starts playback and leaves the menu out of sync
 
 ## [1.2.0] - 2025-12-18
 
