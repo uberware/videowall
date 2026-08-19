@@ -1,20 +1,85 @@
-# This workflow will upload a Python Package to PyPI when a PR is merged to main
+# Publishes a Python package to PyPI when a new version lands on main.
+#
+# The trigger is a push to main rather than a merged pull request: work goes to main
+# directly here, and a pull_request event runs as refs/pull/N/merge, which no branch
+# policy on the pypi environment can ever match.
 
 name: Publish to PyPI
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
+  # Nothing reaches PyPI that has not passed the full test and lint suite.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # Every push to main triggers this workflow, but only a version bump is a release.
+  # This runs outside the pypi environment so an unchanged version never queues an
+  # approval request.
+  version:
+    name: check version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      new: ${{ steps.check.outputs.new }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Compare the declared version against PyPI
+        id: check
+        run: |
+          python - >> "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import tomllib
+          import urllib.error
+          import urllib.request
+
+          with open("pyproject.toml", "rb") as handle:
+              project = tomllib.load(handle)["project"]
+          name, version = project["name"], project["version"]
+
+          try:
+              with urllib.request.urlopen(f"https://pypi.org/pypi/{name}/json") as response:
+                  published = json.load(response)["releases"]
+          except urllib.error.HTTPError as error:
+              if error.code != 404:  # 404 means the project has never been published
+                  raise
+              published = {}
+
+          print(f"version={version}")
+          print(f"new={'false' if version in published else 'true'}")
+          PY
+
+      - name: Report the decision
+        run: |
+          if [ "${{ steps.check.outputs.new }}" = "true" ]; then
+            echo "Publishing ${{ steps.check.outputs.version }}." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Version ${{ steps.check.outputs.version }} is already on PyPI, nothing to publish." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   publish:
-    if: github.event.pull_request.merged == true
+    name: publish
+    needs: [ci, version]
+    if: needs.version.outputs.new == 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
-      id-token: write
+      contents: read   # naming any scope drops the rest, so checkout needs this back
+      id-token: write  # trusted publishing to PyPI
 
     steps:
       - name: Checkout code
