@@ -12,6 +12,7 @@ from PySide6.QtGui import QFontDatabase
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
+    QApplication,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -119,8 +120,10 @@ class Player(QWidget):
         self.movie_filter = QLineEdit()
         self.movie_filter.setPlaceholderText("Filter the movie list")
         self.movie_filter.textChanged.connect(self._refill_movie_list)
+        self.movie_filter.returnPressed.connect(self._release_focus)
         self.movie_list = SearchableListBox(parent=self)
         self.movie_list.currentTextChanged.connect(lambda val: self.set_source(content.get_path("content", val)))
+        self.movie_list.activated.connect(lambda _: self._release_focus())
         self.top_row = QHBoxLayout()
         self.top_row.addSpacing(30)
         self.top_row.addWidget(self.movie_filter, stretch=1)
@@ -422,6 +425,27 @@ class Player(QWidget):
             self.timeline.setRange(0, duration)
             update_time_widget(self.total_time, duration)
 
+    def _interface_widgets(self) -> typing.Iterator[QWidget]:
+        """Yield every widget belonging to the player interface."""
+        for layout in (self.top_row, self.settings, self.buttons, self.bottom_row):
+            for index in range(layout.count()):
+                widget = layout.itemAt(index).widget()
+                if widget is not None:
+                    yield widget
+
+    def _release_focus(self):
+        """Drop keyboard focus from this player's controls.
+
+        The text entry widgets consume unmodified key presses while focused, which is what
+        we want while typing a filter but leaves shortcuts such as Space dead once the
+        controls are dismissed. Focus has to be released explicitly rather than by hiding
+        the focused widget, because hiding it hands focus to the next widget in the chain,
+        which is the other text entry widget.
+        """
+        focused = QApplication.focusWidget()
+        if focused is not None and (focused is self or self.isAncestorOf(focused)):
+            focused.clearFocus()
+
     def show_interface(self, show: typing.Optional[bool] = None):
         """Hide or show widgets as needed.
 
@@ -434,17 +458,20 @@ class Player(QWidget):
             _runtime_data["visible"].add(self)
             self.main_column.setContentsMargins(10, 10, 10, 10)
             self.main_column.setSpacing(10)
-            self.movie_list.show()
             self.main_column.insertLayout(0, self.top_row)
             self.video_row.insertLayout(0, self.settings)
             self.video_row.addLayout(self.buttons)
             self.main_column.addLayout(self.bottom_row)
+            # Show only once the layouts are installed, so every widget has a parent
+            for widget in self._interface_widgets():
+                widget.show()
         else:
             _runtime_data["visible"].discard(self)
             self.main_column.setContentsMargins(0, 0, 0, 0)
             self.main_column.setSpacing(0)
-            self.movie_list.clearFocus()
-            self.movie_list.hide()
+            self._release_focus()
+            for widget in self._interface_widgets():
+                widget.hide()
             if self.main_column.count() > 1:
                 self.main_column.removeItem(self.main_column.itemAt(0))
             if self.video_row.count() > 1:
@@ -518,6 +545,9 @@ class Player(QWidget):
     def eventFilter(self, obj, event):
         """Event filter for the video widget to handle clicks to adjust Panel state."""
         if obj == self.video and event.type() == QEvent.MouseButtonPress:
+            # Clicking the video means the user is done with the controls, so give the
+            # keyboard back to the shortcuts even when the layout is locked.
+            self._release_focus()
             if event.button() == Qt.LeftButton and not is_locked():
                 # Toggle palette visibility
                 self.show_interface()
