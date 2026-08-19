@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Menu command to lock/unlock the layout
 * `lock_titlebar` option
 * [CLAUDE.md](CLAUDE.md) Claude code integration document
+* Menu commands to step to the next, previous, or a random layout
 * Automated test suite run with `pytest`
 * GitHub workflow to publish to PyPI
 

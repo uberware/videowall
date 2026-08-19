@@ -3,6 +3,7 @@
 import base64
 import json
 import logging
+import random
 import time
 import typing
 from pathlib import Path
@@ -13,7 +14,7 @@ from PySide6.QtWidgets import QApplication, QInputDialog, QMainWindow
 
 from videowall import content, player
 from videowall.browser import browse_for_spec
-from videowall.options import DEMO_SPEC, OPTIONS
+from videowall.options import DEMO_SPEC, LAST_LAYOUT_NAME, OPTIONS
 from videowall.video_wall import VideoWall
 
 logger = logging.getLogger("videowall")
@@ -22,7 +23,7 @@ logger = logging.getLogger("videowall")
 class MainWindow(QMainWindow):
     """The main window class."""
 
-    default_layout_file = OPTIONS.layout_folder / "last_layout.json"
+    default_layout_file = OPTIONS.layout_folder / f"{LAST_LAYOUT_NAME}.json"
     """The default layout spec file with the last played layout."""
 
     def __init__(self):
@@ -63,6 +64,19 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save)
         layout_menu.addAction(save_action)
+        layout_menu.addSeparator()
+        previous_layout_action = QAction("Previous Layout", self)
+        previous_layout_action.setShortcut("-")
+        previous_layout_action.triggered.connect(lambda: self.step_layout(-1))
+        layout_menu.addAction(previous_layout_action)
+        next_layout_action = QAction("Next Layout", self)
+        next_layout_action.setShortcut("=")
+        next_layout_action.triggered.connect(lambda: self.step_layout(1))
+        layout_menu.addAction(next_layout_action)
+        random_layout_action = QAction("Random Layout", self)
+        random_layout_action.setShortcut("1")
+        random_layout_action.triggered.connect(lambda: self.step_layout(None))
+        layout_menu.addAction(random_layout_action)
 
         # Playback Menu
         play_menu = menu_bar.addMenu("Playback")
@@ -211,6 +225,45 @@ class MainWindow(QMainWindow):
             if OPTIONS.auto_update_layout and self.open_layout:
                 self.write_spec(self.open_layout)
             self.reset(self.read_spec(spec_file))
+
+    def open_layout_index(self, names: typing.List[str]) -> typing.Optional[int]:
+        """Find where the open layout sits in a list of layout names.
+
+        Args:
+            names: layout names, as returned by content.get_files
+
+        Returns:
+            The index of the open layout, or None if no listed layout is open
+        """
+        for index, name in enumerate(names):
+            if content.get_path("layout", name) == self.open_layout:
+                return index
+        return None
+
+    def step_layout(self, direction: typing.Optional[int]):
+        """Load another layout from the list, wrapping around at either end.
+
+        Args:
+            direction: -1 for the previous layout, 1 for the next, None for a random one
+        """
+        names = content.get_files("layout")
+        if not names:
+            logger.info("No layouts to step through")
+            return
+        count = len(names)
+        index = self.open_layout_index(names)
+        if index is None:
+            # Nothing to step from, so enter the list at the end we are heading in from
+            target = random.randrange(count) if direction is None else (0 if direction > 0 else count - 1)  # nosec B311
+        elif direction is None:
+            # Offset by at least one, so a random pick never lands back where it started
+            target = (index + random.randint(1, count - 1)) % count if count > 1 else index  # nosec B311
+        else:
+            target = (index + direction) % count
+        logger.info(f"Stepping layout to: {names[target]}")
+        if OPTIONS.auto_update_layout and self.open_layout:
+            self.write_spec(self.open_layout)
+        self.reset(self.read_spec(content.get_path("layout", names[target])))
 
     def save(self):
         """Request a name from the user and save the current layout."""

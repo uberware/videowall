@@ -11,6 +11,9 @@ OPTIONS_FILE = Path.home() / "videowall_settings.json"
 DEFAULT_QSS = (Path(__file__).parent / "style.qss").read_text()
 """Default QSS content string."""
 
+LAST_LAYOUT_NAME = "last_layout"
+"""Name of the layout the app autosaves on exit, kept out of the selectable layout list."""
+
 DEMO_SPEC = {
     "type": "VideoWall",
     "orientation": "horizontal",

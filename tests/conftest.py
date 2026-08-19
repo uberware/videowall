@@ -1,6 +1,7 @@
 """Shared fixtures and helpers for the videowall test suite."""
 
 import dataclasses
+import json
 import os
 
 # Qt needs an offscreen backend before PySide6 is imported, or the suite opens real windows.
@@ -17,6 +18,12 @@ from videowall.video_wall import each_item_in
 
 MOVIES = ["Alpha Movie.mp4", "Beta Movie.mp4", "Gamma Movie.mp4"]
 """The movie list served to every test in place of a real folder scan."""
+
+LAYOUTS = ["Alpha Layout", "Beta Layout", "Gamma Layout"]
+"""The layout list served to every test in place of a real folder scan."""
+
+REAL_GET_FILES = content.get_files
+"""The unstubbed content.get_files, for tests that need to exercise it directly."""
 
 
 @pytest.fixture(scope="session")
@@ -57,15 +64,25 @@ def test_options(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def stub_content(monkeypatch):
-    """Serve a fixed movie list so no test triggers a real folder scan.
+def stub_content(monkeypatch, tmp_path):
+    """Serve fixed movie and layout lists so no test triggers a real folder scan.
 
-    ``get_path`` returns None on purpose: the players then hold no media, which keeps
-    QMediaPlayer inert while leaving every widget and signal in place.
+    Movies resolve to None on purpose: the players then hold no media, which keeps
+    QMediaPlayer inert while leaving every widget and signal in place. Layouts resolve to
+    real paths under tmp_path, because loading one has to read a file.
     """
-    monkeypatch.setattr(content, "get_files", lambda kind: list(MOVIES))
-    monkeypatch.setattr(content, "get_path", lambda kind, label: None)
+    layout_folder = tmp_path / "layouts"
+    layout_folder.mkdir(parents=True, exist_ok=True)
+    paths = {
+        "content": {name: None for name in MOVIES},
+        "layout": {name: layout_folder / f"{name}.json" for name in LAYOUTS},
+    }
+    for path in paths["layout"].values():
+        path.write_text(json.dumps({"spec": {"type": "VideoWall", "items": [{"type": "Player"}]}}))
+    monkeypatch.setattr(content, "get_files", lambda kind: sorted(paths[kind]))
+    monkeypatch.setattr(content, "get_path", lambda kind, label: paths[kind].get(label))
     monkeypatch.setattr(content, "get_label", lambda root, filename: str(filename))
+    return paths
 
 
 @pytest.fixture(autouse=True)

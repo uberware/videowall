@@ -8,7 +8,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QThread, Signal
 from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QVBoxLayout
 
-from videowall.options import OPTIONS
+from videowall.options import LAST_LAYOUT_NAME, OPTIONS
 
 logger = logging.getLogger("videowall")
 
@@ -106,10 +106,18 @@ def _search():
 
 
 def get_files(file_type: str) -> typing.List[str]:
-    """Get a sorted list with the names of all files available."""
+    """Get a sorted list with the names of all files available.
+
+    The autosaved layout is left out. It is a snapshot of the last session rather than a
+    layout the user chose to keep, so it belongs in neither the Open dialog nor the
+    commands that step through the list.
+    """
     if not _files:
         _search()
-    return sorted(_files[file_type].keys(), key=_sort_key)
+    names = _files[file_type].keys()
+    if file_type == "layout":
+        names = (name for name in names if name != LAST_LAYOUT_NAME)
+    return sorted(names, key=_sort_key)
 
 
 def get_path(file_type: str, name: str) -> Path:
