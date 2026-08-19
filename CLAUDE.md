@@ -2,6 +2,32 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## AppleDouble files (`._*`)
+
+This repository lives on an ExFAT volume (`/Volumes/Dev`), so macOS continuously creates
+AppleDouble sidecar files named `._<filename>`. Their creation cannot be disabled on this
+machine, and the project cannot move to another volume at this time.
+
+**Always ignore them.** They are never project files, and they are never the cause of a problem:
+
+* A `._*` file appearing is expected, not an unexplained change. Do not investigate it, do not
+  report it as an anomaly, and do not let it interrupt the task in hand.
+* Never add, commit, open, or edit one. `.gitignore` already covers them with `._*`.
+* `.gitignore` cannot cover the copies macOS makes *inside* `.git/`, so git commands often print
+  `error: non-monotonic index .git/objects/pack/._pack-*.idx`. That is harmless noise from a
+  sidecar next to the pack index, not a corrupt repository — the command still succeeds. Ignore
+  the line rather than diagnosing it.
+
+**Clean up whenever the noise gets in the way**, then carry on:
+
+```bash
+find . -name '._*' -type f -delete   # or: dot_clean -m .
+```
+
+Both commands match only the `._` sidecars and recurse into `.git/`, which is what silences the
+git warning. macOS recreates the files as it touches the volume, so cleaning is routine
+housekeeping that never stays done — it is not a fix, and a non-zero count afterwards is normal.
+
 ## Commands
 
 ```bash
