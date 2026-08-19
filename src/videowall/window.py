@@ -158,6 +158,10 @@ class MainWindow(QMainWindow):
             self.root.play()
             self._mouse_timer.start()
 
+    def is_paused(self) -> bool:
+        """Get if playback is currently paused."""
+        return self.play_action.text() == "Play"
+
     def is_muted(self) -> bool:
         """Get if the GUI is currently muted."""
         if OPTIONS.play_audio:
@@ -233,6 +237,12 @@ class MainWindow(QMainWindow):
         if self.is_muted():
             logger.info("Muting newly loaded layout")
             self.root.mute()
+        # A new Player starts its own media, so a layout always arrives playing. Without
+        # this the players would run while the menu still offered Play, and the first
+        # press would be spent re-syncing the menu instead of pausing.
+        if self.is_paused():
+            logger.info("Pausing newly loaded layout")
+            self.root.pause()
         if old:
             old.close()
         if clear_open_layout:

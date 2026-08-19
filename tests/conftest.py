@@ -124,6 +124,26 @@ def two_players(main_window, qapp):
 
 
 @pytest.fixture
+def transport_calls(monkeypatch):
+    """Record the play/pause commands every Player receives.
+
+    QMediaPlayer stays in StoppedState without real media loaded, so playbackState cannot
+    say whether a layout was started or paused. The transport commands issued to each
+    player are the signal available to us.
+    """
+    calls = []
+    for name in ("play", "pause"):
+        original = getattr(player.Player, name)
+
+        def record(self, _name=name, _original=original):
+            calls.append((_name, self))
+            return _original(self)
+
+        monkeypatch.setattr(player.Player, name, record)
+    return calls
+
+
+@pytest.fixture
 def shortcut_fired(main_window):
     """Record each time the Space play/pause shortcut reaches the menu action."""
     seen = []
