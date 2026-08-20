@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Playback keeps using the audio device it started on after the system default changes
 * Players stop with a format error when the audio device they are playing through disappears
+* Locking the layout hides the titlebar without the players growing into the freed space
 
 ## [1.3.0] - 2026-08-19
 

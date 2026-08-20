@@ -215,8 +215,30 @@ class MainWindow(QMainWindow):
             flags |= Qt.FramelessWindowHint
         else:
             flags &= ~Qt.FramelessWindowHint
+        outer = self.frameGeometry()
         self.setWindowFlags(flags)
         self.show()
+        QApplication.processEvents()
+        self._keep_frame(outer)
+
+    def _keep_frame(self, outer):
+        """Resize so the window still covers ``outer`` on screen after a frame change.
+
+        Qt preserves the content rectangle across a window flag change, so dropping the
+        titlebar leaves the whole window shorter instead of handing the freed space to the
+        videos. Deriving the content rectangle from the current frame margins gives that
+        space to the players when locking, and takes it back for the titlebar when unlocking.
+
+        Args:
+            outer: the frame geometry the window occupied before the flags changed.
+        """
+        frame = self.frameGeometry()
+        content_rect = self.geometry()
+        left = content_rect.left() - frame.left()
+        top = content_rect.top() - frame.top()
+        right = frame.right() - content_rect.right()
+        bottom = frame.bottom() - content_rect.bottom()
+        self.setGeometry(outer.adjusted(left, top, -right, -bottom))
 
     def load(self):
         """Open the Load dialog box and load a selected layout."""
