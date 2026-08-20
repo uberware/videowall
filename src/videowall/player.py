@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QEvent, QSignalBlocker, Qt, QUrl
 from PySide6.QtGui import QFontDatabase
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtWidgets import (
     QApplication,
@@ -37,6 +37,9 @@ _runtime_data: dict = {
     "visible": set(),
     "locked": False,
 }
+
+_device_watcher: typing.Optional[QMediaDevices] = None
+"""The single QMediaDevices whose signal keeps every player on the default output device."""
 
 
 @dataclass(frozen=True)
@@ -110,9 +113,16 @@ class Player(QWidget):
         self.player = QMediaPlayer()
         self.video = QVideoWidget(parent=self)
         self.video.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatioByExpanding)
+        self.recovery_armed = False
+        self.recovery_phase = None
+        self.recovery_target = 0
         if OPTIONS.play_audio:
             self.audio = QAudioOutput()
             self.player.setAudioOutput(self.audio)
+            self.player.errorOccurred.connect(self.recover_from_device_loss)
+            self.player.mediaStatusChanged.connect(self._resume_after_reload)
+            self.player.positionChanged.connect(self._seek_after_reload)
+            _ensure_device_watcher()
         self.player.setVideoOutput(self.video)
         self.player.durationChanged.connect(self._update_timeline_duration)
         self.video_row.addWidget(self.video, stretch=1)
@@ -367,6 +377,48 @@ class Player(QWidget):
             with QSignalBlocker(self.movie_list):
                 label = content.get_label(OPTIONS.movie_folder, filename)
                 self._select_movie(label)
+
+    def recover_from_device_loss(self, error, message: str = ""):
+        """Reload this player after the audio device it was bound to disappeared.
+
+        Qt fails the player with FormatError when its output device vanishes, even though
+        the movie is perfectly good. Only a player armed by a device change is reloaded,
+        so a genuinely corrupt movie still reports its error instead of looping forever.
+
+        Playback resumes at the position Qt last reported. Unlike restoring a saved layout
+        there is no pre_roll rewind, because that position is live rather than stale.
+        """
+        if not self.recovery_armed or self.recovery_phase:
+            return
+        if error not in (QMediaPlayer.Error.FormatError, QMediaPlayer.Error.ResourceError):
+            return
+        self.recovery_armed = False
+        self.recovery_target = self.player.position()
+        self.recovery_phase = "reloading"
+        logger.info(f"{self} Recovering from audio device loss at {self.recovery_target}: {message}")
+        self.audio.setDevice(QMediaDevices.defaultAudioOutput())
+        source = self.player.source()
+        # Qt ignores setSource with an unchanged URL, so the source has to be cleared first.
+        self.player.setSource(QUrl())
+        self.player.setSource(source)
+
+    def _resume_after_reload(self, status):
+        """Start playing again once the reloaded movie has buffered."""
+        if self.recovery_phase == "reloading" and status == QMediaPlayer.MediaStatus.BufferedMedia:
+            logger.debug(f"{self} Reloaded, resuming playback")
+            self.recovery_phase = "seeking"
+            self.player.play()
+
+    def _seek_after_reload(self, position):
+        """Seek back to where playback stopped, once it is genuinely running again.
+
+        Clearing the source emits a position of its own, so the seek waits for the player
+        to actually be playing rather than for the first position of any kind.
+        """
+        if self.recovery_phase == "seeking" and self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
+            logger.debug(f"{self} Seeking back to {self.recovery_target}")
+            self.recovery_phase = None
+            self.player.setPosition(self.recovery_target)
 
     def end_action(self):
         """What happens when we hit the end of the movie."""
@@ -692,6 +744,33 @@ def history(forward: bool = True):
     player = _runtime_data["control"]
     if player:
         player.move_in_history(forward)
+
+
+def _ensure_device_watcher():
+    """Start watching for audio device changes, once per session.
+
+    QMediaDevices needs a live QApplication, and this module is imported before one
+    exists, so the watcher is built with the first player rather than at import.
+    """
+    global _device_watcher
+    if _device_watcher is None:
+        _device_watcher = QMediaDevices()
+        _device_watcher.audioOutputsChanged.connect(follow_default_audio_device)
+
+
+def follow_default_audio_device():
+    """Move every live player onto the current default audio output device.
+
+    A QAudioOutput resolves the default device when it is constructed and then keeps it,
+    so without this the wall goes on feeding the speakers after the system has switched
+    to a pair of headphones. Volume lives on the audio output rather than the device and
+    is left untouched.
+    """
+    default = QMediaDevices.defaultAudioOutput()
+    logger.debug(f"Following default audio device: {default.description()}")
+    for item in _runtime_data["all players"]:
+        item.recovery_armed = True
+        item.audio.setDevice(default)
 
 
 def set_locked(locked: bool):

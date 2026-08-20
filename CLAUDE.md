@@ -33,7 +33,7 @@ housekeeping that never stays done — it is not a fix, and a non-zero count aft
 ```bash
 # Run the app (activate venv first)
 source venv-test/bin/activate
-python -m videowall          # or: videowall (after pip install -e .)
+videowall                    # the console script; there is no __main__, so python -m does not work
 
 # Test
 pip install -e ".[test]"
@@ -49,6 +49,11 @@ bandit -r src/
 
 `venv-test` is the runtime environment; `venv-build` only holds packaging tools and has no
 PySide6 installed.
+
+Keep `venv-test` on an editable install (`pip install -e ".[test]"`). A non-editable copy
+leaves `venv-test/bin/videowall` running whatever version was installed rather than the
+working tree, so source changes silently do not appear in the running app. `pytest` is
+unaffected either way, because `pyproject.toml` puts `src` on the test `pythonpath`.
 
 Tests run headless via `QT_QPA_PLATFORM=offscreen`, which `tests/conftest.py` sets before
 PySide6 is imported. The fixtures replace the `OPTIONS` singleton and the `content` folder
