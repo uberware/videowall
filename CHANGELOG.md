@@ -6,7 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* Menu command and `/` shortcut to show or hide the controls of every player at once, disabled while the layout is locked
+
 ### Fixed
+* Closing a player left it counted among those showing their controls
 * Playback keeps using the audio device it started on after the system default changes
 * Players stop with a format error when the audio device they are playing through disappears
 * Locking the layout hides the titlebar without the players growing into the freed space

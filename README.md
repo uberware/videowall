@@ -20,6 +20,8 @@ Playback features include:
 
 Click a player to show the control UI.
 
+Press `/` to show or hide the controls on every player at once. While the layout is locked the controls can still be brought up this way, but they are disabled and only show what each player is set to.
+
 Along the top is the list of movies found in the movie folder. You can type to filter the list. If you type multiple words separated by whitespace, it will find items with all words anywhere in the name.
 
 Buttons:

@@ -498,6 +498,22 @@ class Player(QWidget):
         if focused is not None and (focused is self or self.isAncestorOf(focused)):
             focused.clearFocus()
 
+    def set_interface_enabled(self, enabled: bool):
+        """Make the controls operable, or leave them on screen as a dead display.
+
+        A locked wall may still be asked to show its controls, so that the settings of
+        each player can be read off without unlocking. Nothing there may be operated
+        while the lock holds.
+
+        Args:
+            enabled: True to make the controls usable, False to disable them
+        """
+        for widget in self._interface_widgets():
+            widget.setEnabled(enabled)
+        # Audio settings rule the volume slider out for the whole session, so re-enabling
+        # the interface must not hand it back.
+        self.volume_slider.setEnabled(enabled and OPTIONS.play_audio)
+
     def show_interface(self, show: typing.Optional[bool] = None):
         """Hide or show widgets as needed.
 
@@ -517,6 +533,7 @@ class Player(QWidget):
             # Show only once the layouts are installed, so every widget has a parent
             for widget in self._interface_widgets():
                 widget.show()
+            self.set_interface_enabled(not is_locked())
         else:
             _runtime_data["visible"].discard(self)
             self.main_column.setContentsMargins(0, 0, 0, 0)
@@ -585,9 +602,10 @@ class Player(QWidget):
             logger.warning(f"Source not in movie list: {self.filename}")
 
     def closeEvent(self, event):
-        """Override the close event to remove this Player from the transfer list."""
+        """Override the close event to drop this Player from the runtime registries."""
         logger.debug(f"{self} Closing")
         _runtime_data["all players"].remove(self)
+        _runtime_data["visible"].discard(self)
         if _runtime_data["control"] == self:
             _runtime_data["control"] = None
         super().closeEvent(event)
@@ -735,6 +753,18 @@ def toggle():
         player.show_interface()
 
 
+def toggle_all():
+    """Show or hide the interface of every Player at once.
+
+    A single interface on screen makes this a hide, so a wall in a mixed state resolves
+    to fully dismissed rather than flipping each player to the opposite of what it was.
+    """
+    show = not _runtime_data["visible"]
+    logger.info(f"Toggle every player: {'show' if show else 'hide'}")
+    for item in _runtime_data["all players"]:
+        item.show_interface(show)
+
+
 def history(forward: bool = True):
     """Move through the history of the Player with control.
 
@@ -776,7 +806,8 @@ def follow_default_audio_device():
 def set_locked(locked: bool):
     """Set the global locked state.
 
-    When locking, all open player interfaces are immediately closed.
+    When locking, all open player interfaces are immediately closed. Unlocking makes any
+    interface still on screen, put there by ``toggle_all`` while locked, operable again.
 
     Args:
         locked: True to lock, False to unlock.
@@ -785,6 +816,9 @@ def set_locked(locked: bool):
     if locked:
         for p in _runtime_data["all players"]:
             p.show_interface(False)
+    else:
+        for p in _runtime_data["visible"]:
+            p.set_interface_enabled(True)
 
 
 def is_locked() -> bool:

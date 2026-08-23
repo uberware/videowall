@@ -84,6 +84,12 @@ class MainWindow(QMainWindow):
         self.toggle_action.setShortcut("Tab")
         self.toggle_action.triggered.connect(lambda: player.toggle())
         play_menu.addAction(self.toggle_action)
+        # Stays enabled while locked: a locked wall shows its controls disabled rather
+        # than not at all, so this is the only way in and out of that view.
+        toggle_all_action = QAction("Toggle All UI", self)
+        toggle_all_action.setShortcut("/")
+        toggle_all_action.triggered.connect(lambda: player.toggle_all())
+        play_menu.addAction(toggle_all_action)
         self.lock_action = QAction("Lock", self)
         self.lock_action.setShortcut("\\")
         self.lock_action.triggered.connect(self.toggle_lock)

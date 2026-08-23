@@ -75,7 +75,7 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 | `main.py` | Entry point — creates `QApplication`, applies stylesheet, launches `MainWindow` |
 | `window.py` | `MainWindow` — top-level window, menus, keyboard shortcuts, layout save/load, mouse-hiding timer |
 | `video_wall.py` | `VideoWall(QWidget)` — recursive splitter container that holds `Player` or nested `VideoWall` children |
-| `player.py` | `Player(QWidget)` — individual video cell with full playback controls; also contains module-level functions (`act`, `jog`, `volume`, `toggle`, `history`) that operate on the currently-controlled player |
+| `player.py` | `Player(QWidget)` — individual video cell with full playback controls; also contains module-level functions (`act`, `jog`, `volume`, `toggle`, `toggle_all`, `history`) that operate on the currently-controlled player |
 | `content.py` | Background folder scanner (`FolderScanner`/`ScanDialog`) that indexes movie and layout files on first access |
 | `options.py` | Loads `~/videowall_settings.json` into a frozen `_Options` dataclass; `OPTIONS` is a module-level singleton. See [Options reference](#options-reference) below for all available settings. |
 | `browser.py` | Dialog for browsing and selecting saved layouts |
@@ -87,7 +87,7 @@ This is a PySide6 (Qt) desktop app that plays multiple videos simultaneously in 
 
 **`spec` round-trip serialization**: Both `VideoWall` and `Player` expose a `.spec` property that returns a plain dict, and accept a `spec` dict in `__init__`. Layout files are JSON with `geometry`, `state` (base64-encoded Qt window state), `spec` (the recursive tree), and `locked` (boolean). When `sparse_spec` is enabled, `Player.spec` omits keys whose values match the defaults.
 
-**Module-level shared state in `player.py`**: `_runtime_data` dict tracks which `Player` has keyboard/menu control (`"control"`), which is the source of an in-progress swap (`"source"`), all live players (`"all players"`), which have visible UI (`"visible"`), and whether the layout is locked (`"locked"`). The module-level `act()`, `jog()`, `volume()`, etc. functions forward to `_runtime_data["control"]`. `set_locked()` and `is_locked()` manage the locked flag.
+**Module-level shared state in `player.py`**: `_runtime_data` dict tracks which `Player` has keyboard/menu control (`"control"`), which is the source of an in-progress swap (`"source"`), all live players (`"all players"`), which have visible UI (`"visible"`), and whether the layout is locked (`"locked"`). The module-level `act()`, `jog()`, `volume()`, etc. functions forward to `_runtime_data["control"]`, while `toggle_all()` drives every player from the `"visible"` set. `set_locked()` and `is_locked()` manage the locked flag.
 
 **`OPTIONS` singleton**: Loaded once at import from `~/videowall_settings.json`. All modules read from this; it is never mutated at runtime.
 
