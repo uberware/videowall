@@ -116,6 +116,7 @@ class Player(QWidget):
         self.recovery_armed = False
         self.recovery_phase = None
         self.recovery_target = 0
+        self.recovery_playing = True
         if OPTIONS.play_audio:
             self.audio = QAudioOutput()
             self.player.setAudioOutput(self.audio)
@@ -386,7 +387,9 @@ class Player(QWidget):
         so a genuinely corrupt movie still reports its error instead of looping forever.
 
         Playback resumes at the position Qt last reported. Unlike restoring a saved layout
-        there is no pre_roll rewind, because that position is live rather than stale.
+        there is no pre_roll rewind, because that position is live rather than stale. A
+        player that was paused is paused again once it lands, so pulling the headphones
+        out of a stopped wall does not start it playing.
         """
         if not self.recovery_armed or self.recovery_phase:
             return
@@ -419,6 +422,12 @@ class Player(QWidget):
             logger.debug(f"{self} Seeking back to {self.recovery_target}")
             self.recovery_phase = None
             self.player.setPosition(self.recovery_target)
+            if not self.recovery_playing:
+                # The reload has to run to reach its old position and put that frame on
+                # screen, so a paused player is played and stopped again rather than never
+                # started: seeking a stopped player leaves the video blank.
+                logger.debug(f"{self} Pausing again, as it was before the device went")
+                self.player.pause()
 
     def end_action(self):
         """What happens when we hit the end of the movie."""
@@ -800,6 +809,9 @@ def follow_default_audio_device():
     logger.debug(f"Following default audio device: {default.description()}")
     for item in _runtime_data["all players"]:
         item.recovery_armed = True
+        # Read now rather than when Qt reports the failure: by then the player has stopped,
+        # and a paused wall would be indistinguishable from one that was playing.
+        item.recovery_playing = item.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState
         item.audio.setDevice(default)
 
 

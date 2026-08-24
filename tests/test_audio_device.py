@@ -38,6 +38,37 @@ def other_device(qapp):
     return others[0]
 
 
+@pytest.fixture
+def recovery_transport(single_player, monkeypatch):
+    """Stand in for the media a headless player cannot hold, and record its transport.
+
+    Recovery reads the playback state and position Qt reports and answers with play, seek
+    and pause commands. Nothing plays in a headless test, so the readings come from this
+    harness and the commands are recorded rather than run.
+    """
+    harness = {"calls": [], "state": QMediaPlayer.PlaybackState.PlayingState, "position": 0}
+    media = type(single_player.player)
+    monkeypatch.setattr(media, "playbackState", lambda self: harness["state"])
+    monkeypatch.setattr(media, "position", lambda self: harness["position"])
+    for name in ("play", "pause"):
+        monkeypatch.setattr(media, name, lambda self, _name=name: harness["calls"].append((_name, None)))
+    monkeypatch.setattr(media, "setPosition", lambda self, position: harness["calls"].append(("setPosition", position)))
+    return harness
+
+
+def run_recovery(item, harness):
+    """Take a player through a whole device loss recovery, in place of Qt's signals.
+
+    The state flips to playing partway through because the real ``play`` of the reload
+    would have started the movie again by then, which is what releases the seek.
+    """
+    player.follow_default_audio_device()
+    item.recover_from_device_loss(QMediaPlayer.Error.FormatError, "Failed to load media")
+    item._resume_after_reload(QMediaPlayer.MediaStatus.BufferedMedia)
+    harness["state"] = QMediaPlayer.PlaybackState.PlayingState
+    item._seek_after_reload(item.recovery_target)
+
+
 def test_the_sweep_returns_every_player_to_the_current_default(two_players, other_device):
     """Both players are playing out of the wrong device, and both are brought back."""
     for item in two_players:
@@ -169,3 +200,45 @@ class TestRecoveryFromDeviceLoss:
         single_player.recover_from_device_loss(QMediaPlayer.Error.AccessDeniedError, "nope")
 
         assert single_player.recovery_phase is None
+
+    def test_arming_remembers_that_the_player_was_playing(self, single_player, recovery_transport):
+        """The state is read as the device changes, before Qt has failed the player."""
+        recovery_transport["state"] = QMediaPlayer.PlaybackState.PlayingState
+
+        player.follow_default_audio_device()
+
+        assert single_player.recovery_playing is True
+
+    def test_arming_remembers_that_the_player_was_paused(self, single_player, recovery_transport):
+        """A paused wall is what recovery has to put back, so the pause is recorded."""
+        recovery_transport["state"] = QMediaPlayer.PlaybackState.PausedState
+
+        player.follow_default_audio_device()
+
+        assert single_player.recovery_playing is False
+
+    def test_a_player_that_was_playing_is_left_playing(self, single_player, recovery_transport):
+        """The reloaded movie runs on by itself, exactly as it did before the device went."""
+        recovery_transport["state"] = QMediaPlayer.PlaybackState.PlayingState
+
+        run_recovery(single_player, recovery_transport)
+
+        assert ("setPosition", 0) in recovery_transport["calls"]
+        assert "pause" not in [name for name, _ in recovery_transport["calls"]]
+
+    def test_a_player_that_was_paused_is_paused_again(self, single_player, recovery_transport):
+        """Losing the headphones must not start a wall the user had deliberately stopped."""
+        recovery_transport["state"] = QMediaPlayer.PlaybackState.PausedState
+
+        run_recovery(single_player, recovery_transport)
+
+        assert [name for name, _ in recovery_transport["calls"]][-2:] == ["setPosition", "pause"]
+
+    def test_a_player_that_was_paused_lands_on_the_frame_it_stopped_on(self, single_player, recovery_transport):
+        """The pause comes after the seek, so the frame left on screen is the right one."""
+        recovery_transport["state"] = QMediaPlayer.PlaybackState.PausedState
+        recovery_transport["position"] = 60000
+
+        run_recovery(single_player, recovery_transport)
+
+        assert ("setPosition", 60000) in recovery_transport["calls"]
