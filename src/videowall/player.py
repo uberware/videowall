@@ -885,6 +885,11 @@ def set_locked(locked: bool):
             p.set_interface_enabled(True)
 
 
+def any_interface_visible() -> bool:
+    """Return True if any Player currently has its interface on screen."""
+    return bool(_runtime_data["visible"])
+
+
 def is_locked() -> bool:
     """Return True if the layout is currently locked."""
     return _runtime_data["locked"]

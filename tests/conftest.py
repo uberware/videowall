@@ -82,6 +82,9 @@ def stub_content(monkeypatch, tmp_path):
     monkeypatch.setattr(content, "get_files", lambda kind: sorted(paths[kind]))
     monkeypatch.setattr(content, "get_path", lambda kind, label: paths[kind].get(label))
     monkeypatch.setattr(content, "get_label", lambda root, filename: str(filename))
+    # Saving registers the new layout, which the real function writes into the module cache
+    # this fixture is standing in for.
+    monkeypatch.setattr(content, "add_new_layout", lambda path: paths["layout"].update({path.stem: path}))
     return paths
 
 

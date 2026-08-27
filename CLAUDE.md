@@ -137,7 +137,7 @@ All options live in `~/videowall_settings.json` and are loaded once at startup i
 | `hide_mouse_delay`      | `float` | `3.0`   | Seconds of inactivity before the mouse pointer is hidden during playback.                                                                       |
 | `jog_interval`          | `int`   | `10000` | Milliseconds to seek per jog operation.                                                                                                         |
 | `layout_folder`         | `Path`  |         | Directory where layout JSON files are stored.                                                                                                   |
-| `lock_titlebar`         | `bool`  | `False` | When `False`, locking the layout hides the window titlebar. When `True`, the titlebar stays visible while locked. Unlocking always restores it. |
+| `lock_titlebar`         | `bool`  | `False` | When `False`, locking the layout hides the window titlebar, and the `/` interface toggle shows and hides it with the player controls. When `True`, the titlebar stays visible for the whole lock. Unlocking always restores it. |
 | `movie_folder`          | `Path`  |         | Root directory scanned for movie files.                                                                                                         |
 | `open_last_on_startup`  | `bool`  | `True`  | When enabled, the last saved layout is loaded automatically on startup.                                                                         |
 | `play_audio`            | `bool`  | `True`  | Set to `False` to disable all audio playback and hide audio controls.                                                                           |

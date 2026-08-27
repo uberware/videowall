@@ -88,7 +88,7 @@ class MainWindow(QMainWindow):
         # than not at all, so this is the only way in and out of that view.
         toggle_all_action = QAction("Toggle All UI", self)
         toggle_all_action.setShortcut("/")
-        toggle_all_action.triggered.connect(lambda: player.toggle_all())
+        toggle_all_action.triggered.connect(self.toggle_all_ui)
         play_menu.addAction(toggle_all_action)
         self.lock_action = QAction("Lock", self)
         self.lock_action.setShortcut("\\")
@@ -203,11 +203,21 @@ class MainWindow(QMainWindow):
         """Toggle the locked state of the layout."""
         self._apply_lock(not player.is_locked())
 
+    def toggle_all_ui(self):
+        """Show or hide the interface of every player, titlebar included.
+
+        The titlebar carries the layout name, so on a locked wall it belongs to the
+        interface and comes and goes with the controls.
+        """
+        player.toggle_all()
+        self._apply_frame()
+
     def _apply_lock(self, locked: bool):
         """Apply the given locked state to runtime data, the VideoWall tree, and the menu.
 
-        When locking, hides the window titlebar unless ``OPTIONS.lock_titlebar`` is True.
-        When unlocking, the titlebar is always restored regardless of ``OPTIONS.lock_titlebar``.
+        Locking closes every player interface, so the titlebar goes with it unless
+        ``OPTIONS.lock_titlebar`` is True. Unlocking always restores the titlebar,
+        regardless of ``OPTIONS.lock_titlebar``.
 
         Args:
             locked: True to lock, False to unlock.
@@ -216,13 +226,25 @@ class MainWindow(QMainWindow):
         self.root.set_locked(locked)
         self.lock_action.setText("Unlock" if locked else "Lock")
         self.toggle_action.setEnabled(not locked)
+        self._apply_frame()
+
+    def _apply_frame(self):
+        """Hide the window titlebar when a locked wall is showing nothing but its videos.
+
+        An unlocked wall always keeps its titlebar, and so does a locked one when
+        ``OPTIONS.lock_titlebar`` is set, which leaves the frame untouched by the interface
+        toggle in both cases.
+        """
+        hide = player.is_locked() and not OPTIONS.lock_titlebar and not player.any_interface_visible()
         flags = self.windowFlags()
-        if locked and not OPTIONS.lock_titlebar:
-            flags |= Qt.FramelessWindowHint
+        if hide:
+            wanted = flags | Qt.FramelessWindowHint
         else:
-            flags &= ~Qt.FramelessWindowHint
+            wanted = flags & ~Qt.FramelessWindowHint
+        if wanted == flags:
+            return
         outer = self.frameGeometry()
-        self.setWindowFlags(flags)
+        self.setWindowFlags(wanted)
         self.show()
         QApplication.processEvents()
         self._keep_frame(outer)
@@ -300,6 +322,7 @@ class MainWindow(QMainWindow):
             text = text.replace("/", "_").replace("\\", "_")
             out_file = OPTIONS.layout_folder / f"{text}.json"
             self.open_layout = out_file
+            self._update_title()
             self.write_spec(out_file)
             content.add_new_layout(out_file)
 
@@ -328,7 +351,16 @@ class MainWindow(QMainWindow):
             old.close()
         if clear_open_layout:
             self.open_layout = None
+        self._update_title()
         self._apply_lock(locked)
+
+    def _update_title(self):
+        """Name the window after the open layout, leaving it blank when none is open.
+
+        An unsaved wall — a new layout, the demo, or the auto saved last layout — has no
+        file behind it, so there is no name the user could go back to.
+        """
+        self.setWindowTitle(self.open_layout.stem if self.open_layout else "")
 
     def read_spec(self, file: typing.Optional[Path] = None) -> dict:
         """Read a spec file and restore the window state (if available).

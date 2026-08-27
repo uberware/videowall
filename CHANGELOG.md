@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * Menu command and `/` shortcut to show or hide the controls of every player at once, disabled while the layout is locked
+* The window titlebar shows the name of the open layout, and while the layout is locked it is shown and hidden by `/` along with the player controls
 
 ### Fixed
 * Closing a player left it counted among those showing their controls
