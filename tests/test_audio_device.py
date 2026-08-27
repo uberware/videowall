@@ -16,7 +16,7 @@ import dataclasses
 
 import pytest
 from PySide6.QtCore import QUrl
-from PySide6.QtMultimedia import QMediaDevices, QMediaPlayer
+from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 
 from videowall import player, window
 
@@ -242,6 +242,46 @@ class TestRecoveryFromDeviceLoss:
         run_recovery(single_player, recovery_transport)
 
         assert ("setPosition", 60000) in recovery_transport["calls"]
+
+
+class TestTheSweepOnlyMovesWhatNeedsMoving:
+    """``audioOutputsChanged`` reports a change to the list of devices, not to the default.
+
+    A device appearing or disappearing anywhere fires it, so most sweeps find some players
+    already on the device they are being pointed at. Reconfiguring a live audio output that
+    is already correct is work for nothing, and it is done to every player at once.
+    """
+
+    @pytest.fixture
+    def device_calls(self, monkeypatch):
+        """Record every setDevice, so a call that should not happen can be seen not to."""
+        calls = []
+        original = QAudioOutput.setDevice
+
+        def record(self, device):
+            calls.append(device.description())
+            original(self, device)
+
+        monkeypatch.setattr(QAudioOutput, "setDevice", record)
+        return calls
+
+    def test_a_player_already_on_the_default_is_left_alone(self, single_player, device_calls):
+        """The common case: nothing moved, so nothing is touched."""
+        assert single_player.audio.device() == QMediaDevices.defaultAudioOutput(), "precondition"
+
+        player.follow_default_audio_device()
+
+        assert device_calls == []
+
+    def test_a_player_on_the_wrong_device_is_still_moved(self, single_player, other_device, device_calls):
+        """Skipping the redundant calls must not skip the ones that do the work."""
+        single_player.audio.setDevice(other_device)
+        device_calls.clear()
+
+        player.follow_default_audio_device()
+
+        assert device_calls == [QMediaDevices.defaultAudioOutput().description()]
+        assert single_player.audio.device() == QMediaDevices.defaultAudioOutput()
 
 
 class TestArmingExpires:

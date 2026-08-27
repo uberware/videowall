@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Playback keeps using the audio device it started on after the system default changes
 * Players stop with a format error when the audio device they are playing through disappears
 * Locking the layout hides the titlebar without the players growing into the freed space
+* Every player's audio output was reconfigured whenever the list of audio devices changed, including the players already on the default
 * A device change armed every player for recovery indefinitely, so an unrelated failure hours later reloaded a healthy player instead of reporting itself
 
 ## [1.3.0] - 2026-08-19

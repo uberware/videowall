@@ -823,25 +823,48 @@ def _ensure_device_watcher():
 
 
 def follow_default_audio_device():
-    """Move every live player onto the current default audio output device.
+    """Move any player that is not already on the default audio output device.
 
     A QAudioOutput resolves the default device when it is constructed and then keeps it,
     so without this the wall goes on feeding the speakers after the system has switched
     to a pair of headphones. Volume lives on the audio output rather than the device and
     is left untouched.
 
-    Every player is armed for recovery, because which player Qt fails after a device
-    change is its own business. The arming expires on its own, so arming one that turns
-    out not to have needed it costs nothing.
+    The signal behind this reports a change to the list of devices, not to the default, so
+    a device appearing or disappearing anywhere fires it and most sweeps find some players
+    already pointed where they are being sent. Those are left alone: reconfiguring a live
+    audio output to the device it is already on achieves nothing, and this sweep would do
+    it to every player of the wall at once.
+
+    Every player is armed for recovery either way, because which player Qt fails after a
+    device change is its own business. The arming expires on its own, so arming one that
+    turns out not to have needed it costs nothing.
     """
     default = QMediaDevices.defaultAudioOutput()
-    logger.debug(f"Following default audio device: {default.description()}")
+    # The signal is audioOutputsChanged, which fires whenever the list of devices changes,
+    # not only when the default moves. Recording what each player was on says whether a
+    # sweep genuinely moved the wall or re-pointed it at the device it already had.
+    moved = []
     for item in _runtime_data["all players"]:
+        # Every player is armed, not only the ones that move. Which player Qt decides to
+        # fail is its own business, and an arming that is not needed now expires by itself.
         item.recovery_armed_at = time.monotonic()
         # Read now rather than when Qt reports the failure: by then the player has stopped,
         # and a paused wall would be indistinguishable from one that was playing.
         item.recovery_playing = item.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState
+        was = item.audio.device()
+        if was == default:
+            # Already right. Reconfiguring a live audio output to the device it is on is
+            # work for nothing, and this sweep would do it to every player at once.
+            continue
         item.audio.setDevice(default)
+        moved.append(was.description())
+    logger.info(
+        f"Following default audio device: {default.description()} "
+        f"({len(moved)} of {len(_runtime_data['all players'])} players moved"
+        + (f", from {sorted(set(moved))}" if moved else ", already there")
+        + ")"
+    )
 
 
 def set_locked(locked: bool):
