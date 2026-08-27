@@ -139,7 +139,7 @@ class TestRecoveryFromDeviceLoss:
         """Any player may be the one Qt kills, so all of them are armed."""
         player.follow_default_audio_device()
 
-        assert [item.recovery_armed for item in two_players] == [True, True]
+        assert [item.recovery_is_armed() for item in two_players] == [True, True]
 
     def test_an_armed_player_reloads_its_source(self, single_player, tmp_path):
         """The source is cleared and restored, because Qt ignores an unchanged URL."""
@@ -242,3 +242,45 @@ class TestRecoveryFromDeviceLoss:
         run_recovery(single_player, recovery_transport)
 
         assert ("setPosition", 60000) in recovery_transport["calls"]
+
+
+class TestArmingExpires:
+    """Arming a player says a failure right now is probably the device that just changed.
+
+    It cannot go on saying that. Left standing, an arming from the morning is still there in
+    the evening, and the first unrelated error of the day is treated as device loss and
+    answered with a reload of a player that was playing perfectly well.
+    """
+
+    def test_a_failure_arriving_promptly_is_still_recovered(self, single_player, tmp_path):
+        """Qt fails a player within moments of the device going, which is the case to keep."""
+        movie = tmp_path / "movie.mp4"
+        movie.write_bytes(b"not really a movie")
+        single_player.player.setSource(QUrl.fromLocalFile(movie))
+        player.follow_default_audio_device()
+
+        single_player.recover_from_device_loss(QMediaPlayer.Error.FormatError, "Failed to load media")
+
+        assert single_player.recovery_phase == "reloading"
+
+    def test_a_failure_long_afterwards_is_left_alone(self, single_player, tmp_path):
+        """An hour later this is just a broken movie, and reloading it would hide that."""
+        movie = tmp_path / "movie.mp4"
+        movie.write_bytes(b"not really a movie")
+        single_player.player.setSource(QUrl.fromLocalFile(movie))
+        player.follow_default_audio_device()
+        single_player.recovery_armed_at -= 3600
+
+        single_player.recover_from_device_loss(QMediaPlayer.Error.FormatError, "Failed to load media")
+
+        assert single_player.recovery_phase is None
+
+    def test_the_window_is_measured_from_the_most_recent_change(self, single_player):
+        """Switching device again re-arms, rather than counting from the first switch."""
+        player.follow_default_audio_device()
+        single_player.recovery_armed_at -= 3600
+        assert not single_player.recovery_is_armed(), "precondition"
+
+        player.follow_default_audio_device()
+
+        assert single_player.recovery_is_armed()

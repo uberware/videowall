@@ -3,6 +3,7 @@
 import logging
 import math
 import random
+import time
 import typing
 from dataclasses import dataclass
 from pathlib import Path
@@ -40,6 +41,15 @@ _runtime_data: dict = {
 
 _device_watcher: typing.Optional[QMediaDevices] = None
 """The single QMediaDevices whose signal keeps every player on the default output device."""
+
+RECOVERY_WINDOW = 10.0
+"""Seconds after a device change within which a failed player is read as device loss.
+
+Qt fails a player the moment the output device it is bound to goes, so the failures worth
+reloading for arrive at once. An arming that never expired would still be standing hours
+later, and the first unrelated error after it would be answered by reloading a player that
+was playing perfectly well, with the real fault hidden.
+"""
 
 
 @dataclass(frozen=True)
@@ -113,7 +123,7 @@ class Player(QWidget):
         self.player = QMediaPlayer()
         self.video = QVideoWidget(parent=self)
         self.video.setAspectRatioMode(Qt.AspectRatioMode.KeepAspectRatioByExpanding)
-        self.recovery_armed = False
+        self.recovery_armed_at: typing.Optional[float] = None
         self.recovery_phase = None
         self.recovery_target = 0
         self.recovery_playing = True
@@ -379,6 +389,17 @@ class Player(QWidget):
                 label = content.get_label(OPTIONS.movie_folder, filename)
                 self._select_movie(label)
 
+    def recovery_is_armed(self) -> bool:
+        """Whether a failure right now would still be blamed on the last device change.
+
+        Returns:
+            True while the arming is recent enough to trust, False once it has gone stale
+            or if no device change has armed this player at all.
+        """
+        if self.recovery_armed_at is None:
+            return False
+        return time.monotonic() - self.recovery_armed_at <= RECOVERY_WINDOW
+
     def recover_from_device_loss(self, error, message: str = ""):
         """Reload this player after the audio device it was bound to disappeared.
 
@@ -386,16 +407,20 @@ class Player(QWidget):
         the movie is perfectly good. Only a player armed by a device change is reloaded,
         so a genuinely corrupt movie still reports its error instead of looping forever.
 
+        The arming has to have been recent, too. Qt fails a player the moment its device
+        goes, so a failure minutes or hours after the last device change is a fault of its
+        own and is left to report itself rather than being answered with a reload.
+
         Playback resumes at the position Qt last reported. Unlike restoring a saved layout
         there is no pre_roll rewind, because that position is live rather than stale. A
         player that was paused is paused again once it lands, so pulling the headphones
         out of a stopped wall does not start it playing.
         """
-        if not self.recovery_armed or self.recovery_phase:
+        if not self.recovery_is_armed() or self.recovery_phase:
             return
         if error not in (QMediaPlayer.Error.FormatError, QMediaPlayer.Error.ResourceError):
             return
-        self.recovery_armed = False
+        self.recovery_armed_at = None
         self.recovery_target = self.player.position()
         self.recovery_phase = "reloading"
         logger.info(f"{self} Recovering from audio device loss at {self.recovery_target}: {message}")
@@ -804,11 +829,15 @@ def follow_default_audio_device():
     so without this the wall goes on feeding the speakers after the system has switched
     to a pair of headphones. Volume lives on the audio output rather than the device and
     is left untouched.
+
+    Every player is armed for recovery, because which player Qt fails after a device
+    change is its own business. The arming expires on its own, so arming one that turns
+    out not to have needed it costs nothing.
     """
     default = QMediaDevices.defaultAudioOutput()
     logger.debug(f"Following default audio device: {default.description()}")
     for item in _runtime_data["all players"]:
-        item.recovery_armed = True
+        item.recovery_armed_at = time.monotonic()
         # Read now rather than when Qt reports the failure: by then the player has stopped,
         # and a paused wall would be indistinguishable from one that was playing.
         item.recovery_playing = item.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState
