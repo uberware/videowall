@@ -17,6 +17,7 @@ import dataclasses
 import pytest
 from PySide6.QtCore import QUrl
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
+from PySide6.QtWidgets import QApplication
 
 from videowall import player, window
 
@@ -61,12 +62,18 @@ def run_recovery(item, harness):
 
     The state flips to playing partway through because the real ``play`` of the reload
     would have started the movie again by then, which is what releases the seek.
+
+    Each step answers a signal from the player and hands its command to the event loop
+    rather than issuing it inside the signal, so the loop is turned between the steps.
     """
     player.follow_default_audio_device()
     item.recover_from_device_loss(QMediaPlayer.Error.FormatError, "Failed to load media")
+    QApplication.processEvents()
     item._resume_after_reload(QMediaPlayer.MediaStatus.BufferedMedia)
+    QApplication.processEvents()
     harness["state"] = QMediaPlayer.PlaybackState.PlayingState
     item._seek_after_reload(item.recovery_target)
+    QApplication.processEvents()
 
 
 def test_the_sweep_returns_every_player_to_the_current_default(two_players, other_device):
@@ -150,6 +157,7 @@ class TestRecoveryFromDeviceLoss:
         player.follow_default_audio_device()
 
         single_player.recover_from_device_loss(QMediaPlayer.Error.FormatError, "Failed to load media")
+        QApplication.processEvents()
 
         assert single_player.player.source() == source
         assert single_player.recovery_phase == "reloading"
@@ -167,6 +175,7 @@ class TestRecoveryFromDeviceLoss:
         single_player.player.sourceChanged.connect(changes.append)
 
         single_player.recover_from_device_loss(QMediaPlayer.Error.FormatError, "Failed to load media")
+        QApplication.processEvents()
 
         assert changes == [QUrl(), QUrl.fromLocalFile(movie)]
 

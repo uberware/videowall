@@ -8,7 +8,7 @@ import typing
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import QEvent, QSignalBlocker, Qt, QUrl
+from PySide6.QtCore import QEvent, QSignalBlocker, Qt, QTimer, QUrl
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtMultimedia import QAudioOutput, QMediaDevices, QMediaPlayer
 from PySide6.QtMultimediaWidgets import QVideoWidget
@@ -41,6 +41,13 @@ _runtime_data: dict = {
 
 _device_watcher: typing.Optional[QMediaDevices] = None
 """The single QMediaDevices whose signal keeps every player on the default output device."""
+
+START_TIMEOUT = 3000
+"""Milliseconds a movie is given to start playing before the player is told again.
+
+Well past a normal open, even off a slow volume, and short enough that a cell which never
+started is answered while the wall is still on the same layout.
+"""
 
 RECOVERY_WINDOW = 10.0
 """Seconds after a device change within which a failed player is read as device loss.
@@ -127,6 +134,15 @@ class Player(QWidget):
         self.recovery_phase = None
         self.recovery_target = 0
         self.recovery_playing = True
+        self.end_pending = False
+        self.wants_playing = False
+        # The backend is the only witness to what becomes of a player, and until now none of
+        # it was written down: a movie that failed to open, or one that stopped instead of
+        # coming round again, left a dead cell on screen and an empty log for that stretch.
+        # These run before the recovery below, which is silent for the failures it declines.
+        self.player.errorOccurred.connect(self._log_error)
+        self.player.playbackStateChanged.connect(self._log_playback_state)
+        self.player.mediaStatusChanged.connect(self._log_media_status)
         if OPTIONS.play_audio:
             self.audio = QAudioOutput()
             self.player.setAudioOutput(self.audio)
@@ -305,10 +321,12 @@ class Player(QWidget):
 
     def play(self):
         """Start playback."""
+        self.wants_playing = True
         self.player.play()
 
     def pause(self):
         """Pause playback."""
+        self.wants_playing = False
         self.player.pause()
 
     def set_mode(self, mode):
@@ -383,11 +401,35 @@ class Player(QWidget):
             if self.at_history is None and (not self.history or self.history[-1] != filename):
                 logger.info(f"{self} Adding history: {filename}")
                 self.history.append(filename)
-            self.player.setSource(QUrl.fromLocalFile(filename))
-            self.player.play()
+            source = QUrl.fromLocalFile(filename)
+            self.player.setSource(source)
+            self.play()
+            # Nothing else would notice a movie that was told to play and never did.
+            self._later(lambda: self._check_started(source), START_TIMEOUT)
             with QSignalBlocker(self.movie_list):
                 label = content.get_label(OPTIONS.movie_folder, filename)
                 self._select_movie(label)
+
+    def _check_started(self, source):
+        """Tell a movie to play again if it was set, told to play, and never moved.
+
+        A loaded movie of known length parked at position 0 with no error is not a movie
+        anyone chose to stop. Only one instruction per movie is given: a second failure is a
+        fault worth reporting rather than fighting, and the stall watcher is what reports it.
+
+        Args:
+            source: the URL this check was scheduled for, so a player that has since moved
+                on to another movie is left to the check that came with it.
+        """
+        if not self.wants_playing or self.player.source() != source:
+            return
+        if self.player.playbackState() != QMediaPlayer.PlaybackState.StoppedState or self.player.position():
+            return
+        logger.warning(
+            f"{self} Never started, telling it to play again: media status "
+            f"{self.player.mediaStatus().name}, file {self.filename}"
+        )
+        self.player.play()
 
     def recovery_is_armed(self) -> bool:
         """Whether a failure right now would still be blamed on the last device change.
@@ -399,6 +441,44 @@ class Player(QWidget):
         if self.recovery_armed_at is None:
             return False
         return time.monotonic() - self.recovery_armed_at <= RECOVERY_WINDOW
+
+    def _later(self, action: typing.Callable, delay: int = 0):
+        """Run ``action`` once the backend has finished the notification we are inside.
+
+        Commanding a QMediaPlayer from one of its own signals races the transition it is
+        still completing. A source set from inside ``positionChanged`` at the end of a movie
+        had the end of stream still in flight delivered against the new media a millisecond
+        later, which stopped a perfectly good movie dead at position 0. Handing the command
+        to the event loop lets the backend settle first.
+
+        Deferred work outlives the signal that asked for it, so a cell closed in between
+        must not still be driven: closing a player only hides the widget, which leaves Qt's
+        own context cancellation waiting on a destruction that has not happened, and a dead
+        cell handed a new movie would play it where nobody can see it.
+
+        Args:
+            action: the callable to run once the event loop comes back round.
+            delay: milliseconds to wait first. The default hands it to the very next turn.
+        """
+
+        def run():
+            """Run the action unless this player has been closed in the meantime."""
+            if self in _runtime_data["all players"]:
+                action()
+
+        QTimer.singleShot(delay, self, run)
+
+    def _log_error(self, error, message: str = ""):
+        """Record a backend error, whether or not anything goes on to act on it."""
+        logger.warning(f"{self} Media error {error.name}: {message}, file {self.filename}")
+
+    def _log_playback_state(self, state):
+        """Record a playback state change, the only announcement a player makes when it gives up."""
+        logger.debug(f"{self} Playback state {state.name} at {self.player.position()}")
+
+    def _log_media_status(self, status):
+        """Record a media status change, which says how far loading a movie actually got."""
+        logger.debug(f"{self} Media status {status.name}")
 
     def recover_from_device_loss(self, error, message: str = ""):
         """Reload this player after the audio device it was bound to disappeared.
@@ -424,6 +504,10 @@ class Player(QWidget):
         self.recovery_target = self.player.position()
         self.recovery_phase = "reloading"
         logger.info(f"{self} Recovering from audio device loss at {self.recovery_target}: {message}")
+        self._later(self._reload_source)
+
+    def _reload_source(self):
+        """Re-point the audio and load the movie again, clear of the error signal."""
         self.audio.setDevice(QMediaDevices.defaultAudioOutput())
         source = self.player.source()
         # Qt ignores setSource with an unchanged URL, so the source has to be cleared first.
@@ -435,7 +519,7 @@ class Player(QWidget):
         if self.recovery_phase == "reloading" and status == QMediaPlayer.MediaStatus.BufferedMedia:
             logger.debug(f"{self} Reloaded, resuming playback")
             self.recovery_phase = "seeking"
-            self.player.play()
+            self._later(self.play)
 
     def _seek_after_reload(self, position):
         """Seek back to where playback stopped, once it is genuinely running again.
@@ -446,13 +530,22 @@ class Player(QWidget):
         if self.recovery_phase == "seeking" and self.player.playbackState() == QMediaPlayer.PlaybackState.PlayingState:
             logger.debug(f"{self} Seeking back to {self.recovery_target}")
             self.recovery_phase = None
-            self.player.setPosition(self.recovery_target)
-            if not self.recovery_playing:
-                # The reload has to run to reach its old position and put that frame on
-                # screen, so a paused player is played and stopped again rather than never
-                # started: seeking a stopped player leaves the video blank.
-                logger.debug(f"{self} Pausing again, as it was before the device went")
-                self.player.pause()
+            self._later(self._seek_back)
+
+    def _seek_back(self):
+        """Land on the position the movie was at, clear of the signal that released it."""
+        self.player.setPosition(self.recovery_target)
+        if not self.recovery_playing:
+            # The reload has to run to reach its old position and put that frame on
+            # screen, so a paused player is played and stopped again rather than never
+            # started: seeking a stopped player leaves the video blank.
+            logger.debug(f"{self} Pausing again, as it was before the device went")
+            self.pause()
+
+    def _run_end_action(self):
+        """Run the end action a movie reaching its end asked for, clear of the signal."""
+        self.end_pending = False
+        self.end_action()
 
     def end_action(self):
         """What happens when we hit the end of the movie."""
@@ -492,7 +585,7 @@ class Player(QWidget):
             logger.debug(f"{self} Pending timeline position: {self.pending_position}")
             position = self.pending_position
             self.pending_position = None
-            self.player.setPosition(position)
+            self._later(lambda: self.player.setPosition(position))
         else:
             with QSignalBlocker(self.timeline):
                 self.timeline.setSliderPosition(position)
@@ -501,8 +594,11 @@ class Player(QWidget):
                     update_time_widget(self.total_time, self.player.duration() - position)
             # Loop mode wraps in the backend, which still reports a position of exactly
             # duration; restarting here as well would defeat that.
-            if position == self.player.duration() and self.mode != PlayerSpec.LOOP:
-                self.end_action()
+            if position == self.player.duration() and self.mode != PlayerSpec.LOOP and not self.end_pending:
+                # The callbacks keep arriving while a player sits on its last frame, so the
+                # end is claimed here and released by the deferred run, not queued again.
+                self.end_pending = True
+                self._later(self._run_end_action)
 
     def _update_timeline_duration(self):
         """Update the UI when the timeline duration is set."""

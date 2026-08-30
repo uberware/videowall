@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * The window titlebar shows the name of the open layout, and while the layout is locked it is shown and hidden by `/` along with the player controls
 
 ### Fixed
+* A player set to next or random stopped dead on a still frame at the end of a movie
 * Closing a player left it counted among those showing their controls
 * Playback keeps using the audio device it started on after the system default changes
 * Players stop with a format error when the audio device they are playing through disappears
