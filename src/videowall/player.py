@@ -58,6 +58,19 @@ later, and the first unrelated error after it would be answered by reloading a p
 was playing perfectly well, with the real fault hidden.
 """
 
+NO_AUDIO_TRACK = -1
+"""The track selection that gives a player no audio, and no audio pipeline behind it.
+
+On macOS a QAudioOutput at zero volume is not free. AVFoundation still builds an
+AudioQueue for the movie's audio and pushes it over an out-of-process bridge, so a wall of
+muted cells pays for every one of them and hears none. Deselecting the track removes the
+queue outright, which detaching the audio output does not: Qt answers that by muting the
+AVPlayer and leaves the queue running.
+"""
+
+FIRST_AUDIO_TRACK = 0
+"""The track a player comes back to when its volume is raised again."""
+
 
 @dataclass(frozen=True)
 class PlayerSpec:
@@ -148,6 +161,7 @@ class Player(QWidget):
             self.player.setAudioOutput(self.audio)
             self.player.errorOccurred.connect(self.recover_from_device_loss)
             self.player.mediaStatusChanged.connect(self._resume_after_reload)
+            self.player.mediaStatusChanged.connect(self._apply_audio_track_on_load)
             self.player.positionChanged.connect(self._seek_after_reload)
             _ensure_device_watcher()
         self.player.setVideoOutput(self.video)
@@ -358,9 +372,30 @@ class Player(QWidget):
         with QSignalBlocker(self.volume_slider):
             if OPTIONS.play_audio:
                 self.audio.setVolume(volume)
+                self._apply_audio_track()
             self.volume_slider.setSliderPosition(volume_to_slider(volume))
             if set_unmute:
                 self.unmute_volume = volume
+
+    def _apply_audio_track(self):
+        """Select or deselect the audio track to match the volume.
+
+        A player with nothing to play through its audio output should not be running an
+        audio pipeline for it, so silence deselects the track and any volume at all
+        brings it back.
+        """
+        self.player.setActiveAudioTrack(FIRST_AUDIO_TRACK if self.audio.volume() else NO_AUDIO_TRACK)
+
+    def _apply_audio_track_on_load(self, status):
+        """Re-apply the selection to a movie that has just opened.
+
+        Qt drops the track selection along with the media it belonged to, and refuses a
+        new one until a source is open, so this is the earliest a fresh movie can be told.
+        A wall opening a saved layout was seen to report BufferedMedia without ever
+        reporting LoadedMedia, so both count.
+        """
+        if status in (QMediaPlayer.MediaStatus.LoadedMedia, QMediaPlayer.MediaStatus.BufferedMedia):
+            self._apply_audio_track()
 
     def mute(self):
         """Mute the volume, but remember last volume to unmute back to."""

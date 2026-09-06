@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Locking the layout hides the titlebar without the players growing into the freed space
 * Every player's audio output was reconfigured whenever the list of audio devices changed, including the players already on the default
 * A device change armed every player for recovery indefinitely, so an unrelated failure hours later reloaded a healthy player instead of reporting itself
+* Every player ran a full macOS audio pipeline even at zero volume, so a wall of silent cells drove AudioToolbox hard enough to crash it; a player at zero volume now deselects its audio track and runs no audio queue at all
 
 ## [1.3.0] - 2026-08-19
 
